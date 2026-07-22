@@ -3,7 +3,7 @@
    ========================================================================== */
 
 import { STATIONS } from './config.js';
-import { fetchChannelFeeds, fetchLive24hFeeds, parseGeoAndRssi, getDemoData } from './api.js';
+import { fetchChannelFeeds, fetchLatestChannelFeeds, parseGeoAndRssi, getDemoData } from './api.js';
 import { fmt0, fmt1, computeEEAAQI, computeEPAAQI, calculateVOCBaselineAndDelta } from './calculations.js';
 import { loadStationPreferences, saveStationPreferences, resetStationPreferencesKeepField, migrateLegacyPreferences } from './storage.js';
 import { exportCSVData } from './csv.js';
@@ -15,7 +15,6 @@ let activeStationIdx = 0;
 let currentStation = STATIONS[0];
 let state = { ...loadStationPreferences(0) };
 let rawFeedsStore = [];
-let live24hFeedsStore = [];
 let refreshTimer = null;
 let lastFieldTracker = { startDate: '', viewMode: 'live', day: '' };
 
@@ -71,24 +70,33 @@ function updateHeaderUI(geoInfo, tStart, tEnd) {
 }
 
 /**
- * Updates 8 synthetic KPI Cards using strictly real last 24h feeds
+ * Updates 8 synthetic KPI Cards using the latest real feeds from the IoT station
  */
-function updateKPICards(kpiFeeds, allRangeFeeds) {
-  if (!kpiFeeds || !kpiFeeds.length) {
+function updateKPICards(allAvailableFeeds) {
+  if (!allAvailableFeeds || !allAvailableFeeds.length) {
     applyDemoKPIs();
     return;
   }
 
-  const lastFeed = kpiFeeds.at(-1);
+  // 1. Get the absolute latest real feed recorded by this station
+  const lastFeed = allAvailableFeeds.at(-1);
 
-  // 1. Last Update Timestamp
+  // Update "Ultima rilevazione" with exact date and time of the latest reading
   const lastDate = new Date(lastFeed.created_at);
   document.getElementById('lastUpdate').textContent = `Ultima rilevazione: ${lastDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${lastDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
 
-  // Helper for Min/Max range string across current view mode window
-  const evalFeeds = allRangeFeeds.length ? allRangeFeeds : kpiFeeds;
+  // 2. Compute the 24-hour window preceding the last recorded reading
+  const cutoff24h = new Date(lastDate.getTime() - 24 * 60 * 60 * 1000);
+  const feeds24h = allAvailableFeeds.filter(f => {
+    const d = new Date(f.created_at);
+    return d >= cutoff24h && d <= lastDate;
+  });
+
+  const feedsForAvg = feeds24h.length ? feeds24h : allAvailableFeeds;
+
+  // Helper for Min/Max range string
   const getMinMaxStr = (fieldKey, unit) => {
-    const validVals = evalFeeds.map(x => Number(x[fieldKey])).filter(v => !isNaN(v));
+    const validVals = allAvailableFeeds.map(x => Number(x[fieldKey])).filter(v => !isNaN(v));
     if (!validVals.length) return '—';
     const min = Math.min(...validVals);
     const max = Math.max(...validVals);
@@ -109,7 +117,7 @@ function updateKPICards(kpiFeeds, allRangeFeeds) {
   document.getElementById('pressMM').textContent = getMinMaxStr('field3', 'hPa');
 
   // Card 4: VOC (Absolute last value + Delta relative to 24h baseline with trend arrow)
-  const { points: vocPoints } = calculateVOCBaselineAndDelta(kpiFeeds, kpiFeeds);
+  const { points: vocPoints } = calculateVOCBaselineAndDelta(feedsForAvg, feedsForAvg);
   if (vocPoints.length) {
     const lastVoc = vocPoints.at(-1);
     const prevVoc = vocPoints.length > 1 ? vocPoints.at(-2) : lastVoc;
@@ -125,6 +133,9 @@ function updateKPICards(kpiFeeds, allRangeFeeds) {
     const deltaEl = document.getElementById('vocDelta');
     deltaEl.textContent = `${sign}${fmt1(delta)} kOhm${arrow}`;
     deltaEl.className = `kpi-subtext ${colorClass}`;
+  } else {
+    document.getElementById('vocValue').textContent = `${fmt1(lastFeed.field4)} kOhm`;
+    document.getElementById('vocDelta').textContent = `—`;
   }
 
   // Card 5: PM1
@@ -132,12 +143,12 @@ function updateKPICards(kpiFeeds, allRangeFeeds) {
   document.getElementById('pm1MM').textContent = getMinMaxStr('field5', 'µg/m³');
 
   // Card 6: PM2.5 (Instantaneous + 24h Moving Average subtext)
-  const avg24PM25 = kpiFeeds.reduce((s, x) => s + Number(x.field6 || 0), 0) / kpiFeeds.length;
+  const avg24PM25 = feedsForAvg.reduce((s, x) => s + Number(x.field6 || 0), 0) / feedsForAvg.length;
   document.getElementById('pm25Value').textContent = `${fmt0(lastFeed.field6)} µg/m³`;
   document.getElementById('pm25avg').textContent = `media 24h: ${fmt0(avg24PM25)} µg/m³`;
 
   // Card 7: PM10 (Instantaneous + 24h Moving Average subtext)
-  const avg24PM10 = kpiFeeds.reduce((s, x) => s + Number(x.field7 || 0), 0) / kpiFeeds.length;
+  const avg24PM10 = feedsForAvg.reduce((s, x) => s + Number(x.field7 || 0), 0) / feedsForAvg.length;
   document.getElementById('pm10Value').textContent = `${fmt0(lastFeed.field7)} µg/m³`;
   document.getElementById('pm10avg').textContent = `media 24h: ${fmt0(avg24PM10)} µg/m³`;
 
@@ -152,11 +163,11 @@ function updateKPICards(kpiFeeds, allRangeFeeds) {
 }
 
 /**
- * Fallback to demo KPI values if API fails
+ * Fallback to demo KPI values if API network call fails completely
  */
 function applyDemoKPIs() {
   const demo = getDemoData();
-  updateKPICards(demo.feeds, demo.feeds);
+  updateKPICards(demo.feeds);
 }
 
 /**
@@ -168,26 +179,28 @@ async function refreshDashboard() {
   refreshTimer = setTimeout(async () => {
     const { start: tStart, end: tEnd } = getTimeRange();
 
-    // 1. Fetch range feeds for historical charts
-    const rangeData = await fetchChannelFeeds(currentStation.id, currentStation.apiKey, tStart, tEnd);
+    // 1. Fetch range feeds for historical charts (with automatic fallback to latest historical feeds if range is empty)
+    let channelData = await fetchChannelFeeds(currentStation.id, currentStation.apiKey, tStart, tEnd);
+
+    // If channelData is missing or empty, fetch latest historical feeds directly
+    if (!channelData || !channelData.feeds || !channelData.feeds.length) {
+      channelData = await fetchLatestChannelFeeds(currentStation.id, currentStation.apiKey);
+    }
+
+    const feeds = channelData ? (channelData.feeds || []) : [];
+    rawFeedsStore = feeds;
+
+    const channelInfo = channelData ? (channelData.channel || {}) : {};
     
-    // 2. Fetch live 24h feeds for KPI cards
-    const live24hData = await fetchLive24hFeeds(currentStation.id, currentStation.apiKey);
-
-    const feedsRange = rangeData ? (rangeData.feeds || []) : [];
-    const feeds24h = live24hData ? (live24hData.feeds || []) : feedsRange;
-
-    rawFeedsStore = feedsRange;
-    live24hFeedsStore = feeds24h;
-
-    const channelInfo = (live24hData && live24hData.channel) ? live24hData.channel : (rangeData ? rangeData.channel : {});
-    const geoInfo = parseGeoAndRssi(channelInfo, feeds24h.at(-1) || feedsRange.at(-1));
+    // Parse GeoLocation & RSSI strictly from the latest real feed recorded by the station
+    const lastRealFeed = feeds.at(-1);
+    const geoInfo = parseGeoAndRssi(channelInfo, lastRealFeed);
 
     updateHeaderUI(geoInfo, tStart, tEnd);
-    updateKPICards(feeds24h, feedsRange);
+    updateKPICards(feeds);
 
     const chartsContainer = document.getElementById('chartsContainer');
-    renderActiveCharts(chartsContainer, feedsRange, state.charts, state.viewMode, state.day, state.mode, tStart);
+    renderActiveCharts(chartsContainer, feeds, state.charts, state.viewMode, state.day, state.mode, tStart);
   }, 250);
 }
 
@@ -230,14 +243,12 @@ function handleResettableFieldChange(fieldName, newValue, el) {
     fieldName,
     newValue,
     () => {
-      // Confirmed -> Reset preferences except for new date
       state = resetStationPreferencesKeepField(activeStationIdx, fieldName, newValue);
       syncControlsUI();
       saveStationPreferences(activeStationIdx, state);
       refreshDashboard();
     },
     () => {
-      // Cancelled -> Revert element to previous tracker value
       el.value = lastFieldTracker[fieldName];
       state[fieldName] = lastFieldTracker[fieldName];
     }
@@ -251,7 +262,6 @@ function initApp() {
   migrateLegacyPreferences();
   registerHourGridPlugin();
 
-  // Populate Station Switcher Select options
   const stationSelect = document.getElementById('stationSelect');
   stationSelect.innerHTML = '';
   STATIONS.forEach((st, idx) => {
@@ -261,7 +271,6 @@ function initApp() {
     stationSelect.appendChild(opt);
   });
 
-  // Restore saved station selection from previous session
   const savedIdx = localStorage.getItem('aqi_station_idx');
   if (savedIdx !== null && STATIONS[savedIdx]) {
     activeStationIdx = Number(savedIdx);

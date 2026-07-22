@@ -11,25 +11,24 @@ export function formatLocalDateTime(d) {
 }
 
 /**
- * Fallback demo data used when ThingSpeak API fails or is offline
+ * Fallback demo data used ONLY when network/HTTP request completely fails
  */
 export function getDemoData() {
   const now = new Date();
   const feeds = [];
   
-  // Generate 48 synthetic feeds over 24h
   for (let i = 48; i >= 0; i--) {
     const t = new Date(now.getTime() - i * 30 * 60 * 1000);
     feeds.push({
       created_at: t.toISOString(),
-      field1: (50 + Math.sin(i / 5) * 10 + Math.random() * 2).toFixed(1), // Humidity
-      field2: (22 + Math.cos(i / 5) * 4 + Math.random()).toFixed(1),      // Temp
-      field3: (1013 + Math.sin(i / 10) * 5).toFixed(1),                  // Pressure
-      field4: (45 + Math.sin(i / 3) * 15 + Math.random() * 5).toFixed(1), // VOC
-      field5: Math.round(6 + Math.random() * 5).toString(),              // PM1
-      field6: Math.round(12 + Math.random() * 8).toString(),             // PM2.5
-      field7: Math.round(18 + Math.random() * 12).toString(),            // PM10
-      field8: "-68;45.465421,9.185924"                                    // RSSI;lat,lon
+      field1: (50 + Math.sin(i / 5) * 10 + Math.random() * 2).toFixed(1),
+      field2: (22 + Math.cos(i / 5) * 4 + Math.random()).toFixed(1),
+      field3: (1013 + Math.sin(i / 10) * 5).toFixed(1),
+      field4: (45 + Math.sin(i / 3) * 15 + Math.random() * 5).toFixed(1),
+      field5: Math.round(6 + Math.random() * 5).toString(),
+      field6: Math.round(12 + Math.random() * 8).toString(),
+      field7: Math.round(18 + Math.random() * 12).toString(),
+      field8: "-68;45.465421,9.185924"
     });
   }
   
@@ -37,10 +36,26 @@ export function getDemoData() {
 }
 
 /**
+ * Fetch latest historical feeds from ThingSpeak without date restrictions (up to 8000 latest feeds)
+ */
+export async function fetchLatestChannelFeeds(channelId, apiKey) {
+  const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?results=8000&api_key=${apiKey}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.warn(`[API] Fetch latest feeds failed for channel ${channelId}:`, error);
+    return null;
+  }
+}
+
+/**
  * Fetch feeds from ThingSpeak REST API for a given station channel & date range
  */
 export async function fetchChannelFeeds(channelId, apiKey, tStart, tEnd) {
-  // Pre-buffer start by 24h for rolling calculations if needed
   const startBuffer = new Date(tStart.getTime() - 24 * 60 * 60 * 1000);
   const startStr = formatLocalDateTime(startBuffer);
   const endStr = formatLocalDateTime(tEnd);
@@ -53,34 +68,23 @@ export async function fetchChannelFeeds(channelId, apiKey, tStart, tEnd) {
       throw new Error(`HTTP Error ${response.status}`);
     }
     const data = await response.json();
-    return data;
+    
+    // If range query returns feeds, return them; otherwise fallback to fetching latest historical channel feeds
+    if (data && data.feeds && data.feeds.length > 0) {
+      return data;
+    }
+
+    const fallbackData = await fetchLatestChannelFeeds(channelId, apiKey);
+    return fallbackData || data;
   } catch (error) {
     console.warn(`[API] Fetch failed for channel ${channelId}:`, error);
-    return null;
+    const fallbackData = await fetchLatestChannelFeeds(channelId, apiKey);
+    return fallbackData;
   }
 }
 
 /**
- * Fetch dedicated live 24h feeds strictly for synthetic KPI cards
- */
-export async function fetchLive24hFeeds(channelId, apiKey) {
-  const now = new Date();
-  const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  
-  const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?start=${encodeURIComponent(formatLocalDateTime(since24h))}&end=${encodeURIComponent(formatLocalDateTime(now))}&results=8000&api_key=${apiKey}`;
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    console.warn(`[API] Live 24h KPI fetch failed:`, error);
-    return null;
-  }
-}
-
-/**
- * Parses Geolocation metadata and RSSI from ThingSpeak payload
+ * Parses Geolocation metadata and RSSI strictly from the latest feed reading and channel settings
  */
 export function parseGeoAndRssi(channelObj, lastFeed) {
   let manualGeo = { lat: null, lon: null };
@@ -94,6 +98,7 @@ export function parseGeoAndRssi(channelObj, lastFeed) {
   const f8 = lastFeed?.field8;
   let rssi = NaN;
   if (f8 !== undefined && f8 !== null && f8 !== '') {
+    // RSSI is always the first token before ';' in field8
     rssi = Number(String(f8).split(';')[0]);
   }
 
