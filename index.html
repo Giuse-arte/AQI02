@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Dashboard professionale per il monitoraggio della qualità dell'aria in tempo reale da centraline IoT ThingSpeak." />
+  
+  <title>Air Quality Index Dashboard — Monitoraggio IoT Ambientale</title>
+  
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/header.css" />
+  <link rel="stylesheet" href="css/kpi.css" />
+  <link rel="stylesheet" href="css/charts.css" />
+  <link rel="stylesheet" href="css/modal.css" />
+
+  <!-- External Chart.js Engine & Date Adapter -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+
+<body>
+
+  <!-- ==========================================================================
+       DASHBOARD HEADER & CONTROL BAR
+       ========================================================================== -->
+  <header class="dashboard-header">
+    <div class="header-identity">
+      <span class="brand-badge">IoT Air Quality Monitor</span>
+      <h1 class="dashboard-title" id="mainTitle">Air Quality Index Device — Stazione</h1>
+      <div class="date-subtitle" id="dateSubtitle">Inizio rilevamento dati: — | Fine: —</div>
+      
+      <div class="geo-status-bar" id="geoRssiStatus">
+        <span class="geo-led non-disponibile"></span>
+        Geoloc.: Caricamento... | RSSI: — (dBm)
+      </div>
+    </div>
+
+    <!-- Control Bar & Filters -->
+    <div class="control-bar">
+      <div class="control-group">
+        <label for="viewMode">Modalità</label>
+        <select id="viewMode">
+          <option value="live">Ultime 24 ore</option>
+          <option value="day">Giorno</option>
+          <option value="week">Ultimi 7 giorni</option>
+          <option value="month">Ultimo mese</option>
+          <option value="year">Ultimo anno</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="dayGroup" style="display: none;">
+        <label for="day">Giorno</label>
+        <input type="date" id="day" />
+      </div>
+
+      <div class="control-group">
+        <label for="startDate">Data Inizio</label>
+        <input type="date" id="startDate" />
+      </div>
+
+      <div class="control-group">
+        <label for="mode">Standard AQI</label>
+        <select id="mode">
+          <option value="EEA" selected>EEA (Europa)</option>
+          <option value="EPA">EPA (Stati Uniti)</option>
+        </select>
+      </div>
+
+      <button class="btn btn-success" id="exportCsvBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Estrai CSV
+      </button>
+
+      <div class="panel-dropdown-wrapper">
+        <button class="btn btn-primary" id="togglePanelBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Contr. Centraline
+        </button>
+
+        <!-- Dropdown Control Panel -->
+        <div class="panel-dropdown" id="panelDropdown">
+          <span class="panel-section-title">Scegli Centralina</span>
+          <select id="stationSelect"></select>
+
+          <hr class="panel-divider" />
+
+          <span class="panel-section-title">Controlla Grafici</span>
+          <div class="btn-group-sm">
+            <button class="btn-sm" id="selectAllBtn">Seleziona tutti</button>
+            <button class="btn-sm" id="deselectAllBtn">Deseleziona tutti</button>
+          </div>
+
+          <div class="checkbox-list">
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="1" /> Umidità – BME680
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="2" /> Temperatura – BME680
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="3" /> Pressione – BME680
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="5" /> PM1 – PMS5003
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="6" /> PM2.5 – PMS5003
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="7" /> PM10 – PMS5003
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="combo" /> PM2.5 + PM10 (24h)
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="4" /> VOC – BME680
+            </label>
+          </div>
+
+          <hr class="panel-divider" />
+
+          <label class="checkbox-item" style="font-weight: 600;">
+            <input type="checkbox" id="remember" /> Ricorda preferenze
+          </label>
+          <p style="font-size: 0.72rem; color: var(--text-dim);">Le preferenze grafici vengono salvate nel browser per la centralina attiva.</p>
+
+          <button class="btn btn-success" id="applyChartsBtn" style="width: 100%; margin-top: 0.4rem;">Applica</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       MAIN CONTENT CONTAINER
+       ========================================================================== -->
+  <main>
+
+    <!-- 8 SYNTHETIC KPI CARDS SECTION -->
+    <section class="glass-panel kpi-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          Key Performance Indicators
+        </h2>
+        <span class="last-update-tag" id="lastUpdate">Ultima rilevazione: —</span>
+      </div>
+
+      <div class="kpi-grid">
+        <!-- Card 1: Umidità -->
+        <div class="kpi-card">
+          <span class="kpi-title">Umidità</span>
+          <span class="kpi-sensor">BME680</span>
+          <div class="kpi-value" id="humValue">— %</div>
+          <span class="kpi-subtext" id="humMM">—</span>
+        </div>
+
+        <!-- Card 2: Temperatura -->
+        <div class="kpi-card">
+          <span class="kpi-title">Temperatura</span>
+          <span class="kpi-sensor">BME680</span>
+          <div class="kpi-value" id="tempValue">— °C</div>
+          <span class="kpi-subtext" id="tempMM">—</span>
+        </div>
+
+        <!-- Card 3: Pressione -->
+        <div class="kpi-card">
+          <span class="kpi-title">Pressione</span>
+          <span class="kpi-sensor">BME680</span>
+          <div class="kpi-value" id="pressValue">— hPa</div>
+          <span class="kpi-subtext" id="pressMM">—</span>
+        </div>
+
+        <!-- Card 4: VOC -->
+        <div class="kpi-card">
+          <span class="kpi-title">VOC</span>
+          <span class="kpi-sensor">BME680</span>
+          <div class="kpi-value" id="vocValue">— kOhm</div>
+          <span class="kpi-subtext" id="vocDelta">—</span>
+        </div>
+
+        <!-- Card 5: PM1 -->
+        <div class="kpi-card">
+          <span class="kpi-title">PM1</span>
+          <span class="kpi-sensor">PMS5003</span>
+          <div class="kpi-value" id="pm1Value">— µg/m³</div>
+          <span class="kpi-subtext" id="pm1MM">—</span>
+        </div>
+
+        <!-- Card 6: PM2.5 -->
+        <div class="kpi-card">
+          <span class="kpi-title">PM2.5</span>
+          <span class="kpi-sensor">PMS5003</span>
+          <div class="kpi-value" id="pm25Value">— µg/m³</div>
+          <span class="kpi-subtext" id="pm25avg">media 24h: —</span>
+        </div>
+
+        <!-- Card 7: PM10 -->
+        <div class="kpi-card">
+          <span class="kpi-title">PM10</span>
+          <span class="kpi-sensor">PMS5003</span>
+          <div class="kpi-value" id="pm10Value">— µg/m³</div>
+          <span class="kpi-subtext" id="pm10avg">media 24h: —</span>
+        </div>
+
+        <!-- Card 8: AQI -->
+        <div class="kpi-card">
+          <button class="kpi-info-btn" id="aqiInfoBtn">i</button>
+          <span class="kpi-title" id="aqiTitle">AQI (EEA 24h)</span>
+          <span class="kpi-sensor">PM2.5 / PM10</span>
+          <div class="kpi-value" id="aqiVal">—</div>
+          <span class="aqi-badge" id="aqiBadge">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 HISTORICAL CHARTS SECTION -->
+    <section class="glass-panel charts-wrapper">
+      <div class="section-header">
+        <h2 class="section-title">Grafici Storici Sensori</h2>
+      </div>
+
+      <div class="charts-grid" id="chartsContainer">
+        <!-- Rendered dynamically by charts.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <footer style="text-align: center; padding: 2rem 1rem; color: var(--text-dim); font-size: 0.8rem;">
+    Dashboard AQI 2.0 — Sistema di Monitoraggio Qualità dell'Aria IoT
+  </footer>
+
+  <!-- Application Controller -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

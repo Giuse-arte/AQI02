@@ -1,0 +1,109 @@
+/* ==========================================================================
+   AQI DASHBOARD 2.0 - LOCALSTORAGE PREFERENCES MANAGER
+   ========================================================================== */
+
+import { DEFAULT_PREFERENCES } from './config.js';
+
+export function getStationPrefKey(stationIdx) {
+  return `aqi_dashboard_preferences_${stationIdx}`;
+}
+
+/**
+ * Saves active visualization state into localStorage for a specific station
+ */
+export function saveStationPreferences(stationIdx, state) {
+  const prefKey = getStationPrefKey(stationIdx);
+
+  const prefs = {
+    mode: state.mode,
+    startDate: state.startDate,
+    viewMode: state.viewMode,
+    day: state.day,
+    remember: state.remember
+  };
+
+  // Persist chart checklist ONLY if "remember" is explicitly enabled by user
+  if (state.remember && Array.isArray(state.charts)) {
+    prefs.charts = state.charts;
+  }
+
+  try {
+    localStorage.setItem(prefKey, JSON.stringify(prefs));
+  } catch (err) {
+    console.error(`[Storage] Failed to save preferences for station ${stationIdx}:`, err);
+  }
+}
+
+/**
+ * Loads preferences for a station index, falling back to defaults if unconfigured
+ */
+export function loadStationPreferences(stationIdx) {
+  const prefKey = getStationPrefKey(stationIdx);
+  const savedStr = localStorage.getItem(prefKey);
+
+  if (!savedStr) {
+    return { ...DEFAULT_PREFERENCES };
+  }
+
+  try {
+    const parsed = JSON.parse(savedStr);
+    return {
+      mode: parsed.mode || DEFAULT_PREFERENCES.mode,
+      startDate: parsed.startDate || '',
+      viewMode: parsed.viewMode || DEFAULT_PREFERENCES.viewMode,
+      day: parsed.day || '',
+      remember: !!parsed.remember,
+      charts: (parsed.remember && Array.isArray(parsed.charts))
+        ? parsed.charts
+        : [...DEFAULT_PREFERENCES.charts]
+    };
+  } catch (err) {
+    console.error(`[Storage] Failed to parse preferences for station ${stationIdx}:`, err);
+    return { ...DEFAULT_PREFERENCES };
+  }
+}
+
+/**
+ * Resets station preferences in localStorage, keeping a newly modified field value
+ */
+export function resetStationPreferencesKeepField(stationIdx, fieldName, newValue) {
+  const prefKey = getStationPrefKey(stationIdx);
+  localStorage.removeItem(prefKey);
+
+  const newDefaults = {
+    ...DEFAULT_PREFERENCES,
+    remember: false,
+    charts: [...DEFAULT_PREFERENCES.charts]
+  };
+
+  if (fieldName === 'startDate') newDefaults.startDate = newValue;
+  if (fieldName === 'viewMode') newDefaults.viewMode = newValue;
+  if (fieldName === 'day') newDefaults.day = newValue;
+
+  return newDefaults;
+}
+
+/**
+ * One-time legacy preferences migration from single key to station 0 index
+ */
+export function migrateLegacyPreferences() {
+  const key0 = getStationPrefKey(0);
+  if (localStorage.getItem(key0) !== null) return; // Already migrated
+
+  const legacy = localStorage.getItem('aqi_dashboard_preferences');
+  if (!legacy) return;
+
+  try {
+    const prefs = JSON.parse(legacy);
+    prefs.viewMode = prefs.viewMode || localStorage.getItem('aqi_viewMode') || 'live';
+    prefs.day = prefs.day || localStorage.getItem('aqi_day') || '';
+    prefs.remember = true;
+    localStorage.setItem(key0, JSON.stringify(prefs));
+  } catch (e) {
+    console.error('[Storage] Legacy preference migration failed:', e);
+  }
+
+  localStorage.removeItem('aqi_dashboard_preferences');
+  localStorage.removeItem('aqi_viewMode');
+  localStorage.removeItem('aqi_day');
+}
