@@ -105,8 +105,12 @@ export function parseGeoAndRssi(channelObj, lastFeed) {
   let geoStr = '-';
   let geoLabel = 'Non disponibile';
   let ledClass = 'non-disponibile';
+  let latNum = null;
+  let lonNum = null;
 
   if (manualGeo.lat !== null) {
+    latNum = manualGeo.lat;
+    lonNum = manualGeo.lon;
     geoStr = `${manualGeo.lat.toFixed(6)},${manualGeo.lon.toFixed(6)}`;
     geoLabel = 'Configurata';
     ledClass = 'configurata';
@@ -117,6 +121,8 @@ export function parseGeoAndRssi(channelObj, lastFeed) {
       const lat = Number(geoParts[0]);
       const lon = Number(geoParts[1]);
       if (!isNaN(lat) && !isNaN(lon)) {
+        latNum = lat;
+        lonNum = lon;
         geoStr = `${lat.toFixed(6)},${lon.toFixed(6)}`;
         geoLabel = 'Automatica';
         ledClass = 'automatica';
@@ -128,6 +134,8 @@ export function parseGeoAndRssi(channelObj, lastFeed) {
     rssiStr: isNaN(rssi) ? '—' : `${rssi.toFixed(0)}`,
     geoStr,
     geoLabel,
-    ledClass
+    ledClass,
+    lat: latNum,
+    lon: lonNum
   };
 }

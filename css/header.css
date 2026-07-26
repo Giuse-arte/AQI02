@@ -56,16 +56,34 @@ header.dashboard-header {
 /* GeoLocation & Signal Status */
 .geo-status-bar {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
   margin-top: 0.2rem;
   font-size: 0.8rem;
   color: var(--text-muted);
   background: rgba(15, 23, 42, 0.4);
-  padding: 0.35rem 0.85rem;
+  padding: 0.45rem 0.85rem;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.05);
   width: fit-content;
+}
+
+.geo-main-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.geo-address-line {
+  font-size: 0.76rem;
+  color: var(--primary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-left: 1.05rem;
+  line-height: 1.3;
 }
 
 .geo-led {
@@ -211,6 +229,19 @@ header.dashboard-header {
 .btn-primary:hover {
   background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
   box-shadow: 0 6px 16px rgba(56, 189, 248, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-theme {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-main);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-theme:hover {
+  background: rgba(148, 163, 184, 0.22);
+  border-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
 }
 

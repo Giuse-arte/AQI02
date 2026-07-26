@@ -49,6 +49,50 @@ function getTimeRange() {
   return { start, end };
 }
 
+// Geocoding cache to prevent repetitive Nominatim API calls
+const geocodeCache = new Map();
+
+async function updateGeoAddressUI(lat, lon) {
+  const addrEl = document.getElementById('geoAddress');
+  if (!addrEl) return;
+
+  if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) {
+    addrEl.textContent = '📍 Indirizzo: non disponibile per queste coordinate';
+    return;
+  }
+
+  const cacheKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+  if (geocodeCache.has(cacheKey)) {
+    addrEl.textContent = `📍 Indirizzo: ${geocodeCache.get(cacheKey)}`;
+    return;
+  }
+
+  addrEl.textContent = '📍 Ricerca indirizzo in corso...';
+
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data && data.address) {
+      const road = data.address.road || data.address.pedestrian || data.address.street || '';
+      const suburb = data.address.suburb || data.address.neighbourhood || '';
+      const city = data.address.city || data.address.town || data.address.village || data.address.municipality || '';
+      const state = data.address.state || data.address.county || '';
+      const country = data.address.country || '';
+
+      const parts = [road, suburb, city, state, country].filter(Boolean);
+      const formatted = parts.length ? parts.join(', ') : data.display_name;
+      geocodeCache.set(cacheKey, formatted);
+      addrEl.textContent = `📍 Indirizzo: ${formatted}`;
+    } else {
+      addrEl.textContent = '📍 Indirizzo non identificato';
+    }
+  } catch (err) {
+    console.warn('[Geocoding] Reverse geocode error:', err);
+    addrEl.textContent = `📍 Coord: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+  }
+}
+
 /**
  * Updates header text (Station Name, RSSI, Geolocation status, Date Range Subtitle)
  */
@@ -60,12 +104,16 @@ function updateHeaderUI(geoInfo, tStart, tEnd) {
     subtitleEl.textContent = `Inizio rilevamento dati: ${tStart.toLocaleDateString('it-IT')} | Fine: ${tEnd.toLocaleDateString('it-IT')}`;
   }
 
-  const geoRssiEl = document.getElementById('geoRssiStatus');
-  if (geoRssiEl && geoInfo) {
-    geoRssiEl.innerHTML = `
+  const mainLineEl = document.getElementById('geoMainLine');
+  if (mainLineEl && geoInfo) {
+    mainLineEl.innerHTML = `
       <span class="geo-led ${geoInfo.ledClass}"></span>
-      GeoLocation (${geoInfo.geoLabel}): ${geoInfo.geoStr} | RSSI: ${geoInfo.rssiStr} (dBm)
+      <span>GeoLocation (${geoInfo.geoLabel}): ${geoInfo.geoStr} | RSSI: ${geoInfo.rssiStr} (dBm)</span>
     `;
+  }
+
+  if (geoInfo) {
+    updateGeoAddressUI(geoInfo.lat, geoInfo.lon);
   }
 }
 
@@ -261,6 +309,38 @@ function handleResettableFieldChange(fieldName, newValue, el) {
 function initApp() {
   migrateLegacyPreferences();
   registerHourGridPlugin();
+
+  // Theme Toggle (Dark / Pastel Light)
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  const themeToggleText = document.getElementById('themeToggleText');
+  const iconDark = themeToggleBtn ? themeToggleBtn.querySelector('.theme-icon-dark') : null;
+  const iconLight = themeToggleBtn ? themeToggleBtn.querySelector('.theme-icon-light') : null;
+
+  function applyTheme(theme) {
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('aqi_theme', theme);
+
+    if (theme === 'light') {
+      if (themeToggleText) themeToggleText.textContent = 'Tema Scuro';
+      if (iconDark) iconDark.style.display = 'none';
+      if (iconLight) iconLight.style.display = 'inline-block';
+    } else {
+      if (themeToggleText) themeToggleText.textContent = 'Tema Chiaro';
+      if (iconDark) iconDark.style.display = 'inline-block';
+      if (iconLight) iconLight.style.display = 'none';
+    }
+  }
+
+  const savedTheme = localStorage.getItem('aqi_theme') || 'dark';
+  applyTheme(savedTheme);
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = document.body.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      applyTheme(newTheme);
+    });
+  }
 
   const stationSelect = document.getElementById('stationSelect');
   stationSelect.innerHTML = '';
