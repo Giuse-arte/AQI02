@@ -240,6 +240,18 @@ main {
   color: #dbeafe !important;
 }
 
+[data-theme="light"] .chart-card-header .kpi-info-btn {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .chart-card-header .kpi-info-btn:hover {
+  background: #ffffff !important;
+  color: #1b4db1 !important;
+  border-color: #ffffff !important;
+}
+
 [data-theme="light"] .chart-legend {
   color: #e2e8f0;
 }
