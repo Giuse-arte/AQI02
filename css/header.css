@@ -136,6 +136,7 @@ header.dashboard-header {
   font-family: inherit;
   outline: none;
   transition: all var(--transition-fast);
+  color-scheme: dark;
 }
 
 .control-group select:hover,
@@ -148,6 +149,22 @@ header.dashboard-header {
 .control-group input[type="date"]:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+}
+
+.control-group input[type="date"] {
+  cursor: pointer;
+}
+
+.control-group input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.85);
+  opacity: 0.85;
+  transition: opacity var(--transition-fast);
+}
+
+.control-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  filter: invert(1);
 }
 
 /* Button Controls */

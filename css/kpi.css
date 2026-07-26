@@ -36,7 +36,7 @@
 }
 
 .last-update-tag {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 400;
   color: var(--text-muted);
 }
@@ -44,7 +44,7 @@
 /* KPI Grid Layout */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
   gap: 1.15rem;
 }
 
@@ -61,7 +61,7 @@
   align-items: center;
   text-align: center;
   position: relative;
-  min-height: 170px;
+  min-height: 175px;
   box-shadow: var(--glass-shadow);
   transition: all var(--transition-smooth);
 }
@@ -73,7 +73,7 @@
 }
 
 .kpi-title {
-  font-size: 0.85rem;
+  font-size: 1.05rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -81,10 +81,10 @@
 }
 
 .kpi-sensor {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-dim);
-  margin-top: 0.1rem;
+  margin-top: 0.15rem;
 }
 
 .kpi-value {
@@ -97,7 +97,7 @@
 }
 
 .kpi-subtext {
-  font-size: 0.78rem;
+  font-size: 0.95rem;
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -124,7 +124,7 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(15, 23, 42, 0.6);
   color: var(--primary);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
   font-family: var(--font-display);
   cursor: pointer;
@@ -147,7 +147,7 @@
   margin-top: 0.4rem;
   padding: 0.3rem 0.85rem;
   border-radius: var(--radius-pill);
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.02em;
