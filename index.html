@@ -34,10 +34,13 @@
       
       <div class="geo-status-bar" id="geoRssiStatus">
         <div class="geo-main-line" id="geoMainLine">
-          <span class="geo-led non-disponibile"></span>
+          <span class="geo-icon-box"><span class="geo-led non-disponibile"></span></span>
           <span>Geoloc.: Caricamento... | RSSI: — (dBm)</span>
         </div>
-        <div class="geo-address-line" id="geoAddress">📍 Indirizzo: In attesa di coordinate...</div>
+        <div class="geo-address-line" id="geoAddress">
+          <span class="geo-icon-box">📍</span>
+          <span id="geoAddressText">Indirizzo: In attesa di coordinate...</span>
+        </div>
       </div>
     </div>
 

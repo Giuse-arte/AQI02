@@ -53,21 +53,30 @@ function getTimeRange() {
 const geocodeCache = new Map();
 
 async function updateGeoAddressUI(lat, lon) {
-  const addrEl = document.getElementById('geoAddress');
-  if (!addrEl) return;
+  const textEl = document.getElementById('geoAddressText');
+  const containerEl = document.getElementById('geoAddress');
+  if (!textEl && !containerEl) return;
+
+  const setAddrText = (msg) => {
+    if (textEl) {
+      textEl.textContent = msg;
+    } else if (containerEl) {
+      containerEl.innerHTML = `<span class="geo-icon-box">📍</span><span id="geoAddressText">${msg}</span>`;
+    }
+  };
 
   if (lat === null || lon === null || isNaN(lat) || isNaN(lon)) {
-    addrEl.textContent = '📍 Indirizzo: non disponibile per queste coordinate';
+    setAddrText('Indirizzo: non disponibile per queste coordinate');
     return;
   }
 
   const cacheKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
   if (geocodeCache.has(cacheKey)) {
-    addrEl.textContent = `📍 Indirizzo: ${geocodeCache.get(cacheKey)}`;
+    setAddrText(`Indirizzo: ${geocodeCache.get(cacheKey)}`);
     return;
   }
 
-  addrEl.textContent = '📍 Ricerca indirizzo in corso...';
+  setAddrText('Ricerca indirizzo in corso...');
 
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
@@ -83,13 +92,13 @@ async function updateGeoAddressUI(lat, lon) {
       const parts = [road, suburb, city, state, country].filter(Boolean);
       const formatted = parts.length ? parts.join(', ') : data.display_name;
       geocodeCache.set(cacheKey, formatted);
-      addrEl.textContent = `📍 Indirizzo: ${formatted}`;
+      setAddrText(`Indirizzo: ${formatted}`);
     } else {
-      addrEl.textContent = '📍 Indirizzo non identificato';
+      setAddrText('Indirizzo non identificato');
     }
   } catch (err) {
     console.warn('[Geocoding] Reverse geocode error:', err);
-    addrEl.textContent = `📍 Coord: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    setAddrText(`Coord: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
   }
 }
 
@@ -107,7 +116,7 @@ function updateHeaderUI(geoInfo, tStart, tEnd) {
   const mainLineEl = document.getElementById('geoMainLine');
   if (mainLineEl && geoInfo) {
     mainLineEl.innerHTML = `
-      <span class="geo-led ${geoInfo.ledClass}"></span>
+      <span class="geo-icon-box"><span class="geo-led ${geoInfo.ledClass}"></span></span>
       <span>GeoLocation (${geoInfo.geoLabel}): ${geoInfo.geoStr} | RSSI: ${geoInfo.rssiStr} (dBm)</span>
     `;
   }
