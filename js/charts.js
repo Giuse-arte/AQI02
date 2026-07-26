@@ -123,6 +123,11 @@ export const getTooltipConfig = () => ({
   }
 });
 
+export function getGridColor() {
+  const isLight = document.body.getAttribute('data-theme') === 'light';
+  return isLight ? 'rgba(0, 0, 0, 0.14)' : 'rgba(255, 255, 255, 0.12)';
+}
+
 /**
  * Generates X-Axis scale configuration based on active view mode
  */
@@ -336,11 +341,6 @@ export function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMod
           legend: { display: false },
           tooltip: getTooltipConfig()
         },
-export function getGridColor() {
-  const isLight = document.body.getAttribute('data-theme') === 'light';
-  return isLight ? 'rgba(0, 0, 0, 0.14)' : 'rgba(255, 255, 255, 0.12)';
-}
-
         scales: {
           x: getXAxisConfig(viewMode, dayVal),
           y: {
