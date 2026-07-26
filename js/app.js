@@ -339,6 +339,7 @@ function initApp() {
       const currentTheme = document.body.getAttribute('data-theme') || 'dark';
       const newTheme = currentTheme === 'light' ? 'dark' : 'light';
       applyTheme(newTheme);
+      refreshDashboard();
     });
   }
 

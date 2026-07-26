@@ -239,22 +239,28 @@ header.dashboard-header {
   transform: translateY(-1px);
 }
 
-.btn-theme {
-  background: rgba(148, 163, 184, 0.12);
-  color: var(--text-main);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.btn-ocra {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+  border: none;
 }
 
-.btn-theme:hover {
-  background: rgba(148, 163, 184, 0.22);
-  border-color: rgba(255, 255, 255, 0.3);
+.btn-ocra:hover {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45);
   transform: translateY(-1px);
 }
 
 /* Dropdown Menu Panel */
 .panel-dropdown-wrapper {
   position: relative;
+}
+
+.right-action-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .panel-dropdown {

@@ -32,6 +32,8 @@ export function registerHourGridPlugin() {
 
       if (vm === 'year') return;
 
+      const isLight = document.body.getAttribute('data-theme') === 'light';
+
       if (vm === 'month' || vm === 'week') {
         let t = Math.ceil(min / 3600000) * 3600000;
         while (t <= max) {
@@ -40,13 +42,13 @@ export function registerHourGridPlugin() {
           let lineWidth = 0;
 
           if (hour === 0) {
-            strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            strokeStyle = isLight ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.22)';
             lineWidth = 1.2;
           } else if (vm === 'month' && (hour === 8 || hour === 16)) {
-            strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            strokeStyle = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.08)';
             lineWidth = 0.8;
           } else if (vm === 'week' && (hour === 6 || hour === 12 || hour === 18)) {
-            strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            strokeStyle = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.08)';
             lineWidth = 0.8;
           }
 
@@ -66,7 +68,7 @@ export function registerHourGridPlugin() {
         return;
       }
 
-      // Live & Day modes
+      // Live & Day modes - vertical line for every hour
       let tLive = Math.ceil(min / 3600000) * 3600000;
       while (tLive <= max) {
         const x = xScale.getPixelForValue(tLive);
@@ -77,7 +79,9 @@ export function registerHourGridPlugin() {
         ctx.beginPath();
         ctx.moveTo(x, top);
         ctx.lineTo(x, bottom);
-        ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.04)';
+        ctx.strokeStyle = isMajor
+          ? (isLight ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.20)')
+          : (isLight ? 'rgba(0, 0, 0, 0.11)' : 'rgba(255, 255, 255, 0.08)');
         ctx.lineWidth = isMajor ? 1.2 : 0.8;
         ctx.stroke();
         ctx.restore();
@@ -332,13 +336,18 @@ export function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMod
           legend: { display: false },
           tooltip: getTooltipConfig()
         },
+export function getGridColor() {
+  const isLight = document.body.getAttribute('data-theme') === 'light';
+  return isLight ? 'rgba(0, 0, 0, 0.14)' : 'rgba(255, 255, 255, 0.12)';
+}
+
         scales: {
           x: getXAxisConfig(viewMode, dayVal),
           y: {
             beginAtZero: false,
             title: { display: true, text: meta.unit, color: '#94a3b8' },
             ticks: { color: '#94a3b8' },
-            grid: { color: 'rgba(255,255,255,0.06)', lineWidth: 0.8 }
+            grid: { color: getGridColor(), lineWidth: 0.9 }
           }
         }
       }
@@ -395,7 +404,7 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal) {
           beginAtZero: false,
           title: { display: true, text: 'Delta kOhm', color: '#94a3b8' },
           ticks: { color: '#94a3b8' },
-          grid: { color: 'rgba(255,255,255,0.06)', lineWidth: 0.8 }
+          grid: { color: getGridColor(), lineWidth: 0.9 }
         }
       }
     }
@@ -523,7 +532,7 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart)
           beginAtZero: false,
           title: { display: true, text: 'µg/m³', color: '#94a3b8' },
           ticks: { color: '#94a3b8' },
-          grid: { color: 'rgba(255,255,255,0.06)', lineWidth: 0.8 }
+          grid: { color: getGridColor(), lineWidth: 0.9 }
         }
       }
     }
