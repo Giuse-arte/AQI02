@@ -1,7 +1,7 @@
 # Air Quality Index Dashboard — Operating Manual
 ## AQI — Centralina Multi-Stazione — Versione 07.00
 **Guida all'uso per il monitoraggio della qualità dell'aria — gestione multi-centralina**  
-[https://giuse-arte.github.io/AQI01/index.html](https://giuse-arte.github.io/AQI01/index.html)
+[https://giuse-arte.github.io/AQI02/index.html](https://giuse-arte.github.io/AQI02/index.html)
 
 ---
 
