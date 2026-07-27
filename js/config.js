@@ -4,8 +4,8 @@
 
 // Externalized Stations Configuration - Add new stations here effortlessly
 export const STATIONS = [
-  { id: 2789658, apiKey: '4IMIXLC0RWW9K4PA', name: 'AQI_01', location: 'Stazione Primaria' },
-  { id: 3412629, apiKey: 'HP8HM37WZ9BAVB4A', name: 'AQI_02', location: 'Stazione Secondaria' }
+  { id: 2789658, apiKey: '4IMIXLC0RWW9K4PA', name: 'Device N° AQI_01', location: 'Stazione Primaria' },
+  { id: 3412629, apiKey: 'HP8HM37WZ9BAVB4A', name: 'Device N° AQI_02', location: 'Stazione Secondaria' }
 ];
 
 // EEA (European Environment Agency) Classifications & Thresholds

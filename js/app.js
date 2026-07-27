@@ -86,10 +86,20 @@ async function updateGeoAddressUI(lat, lon) {
       const road = data.address.road || data.address.pedestrian || data.address.street || '';
       const suburb = data.address.suburb || data.address.neighbourhood || '';
       const city = data.address.city || data.address.town || data.address.village || data.address.municipality || '';
-      const state = data.address.state || data.address.county || '';
-      const country = data.address.country || '';
+      
+      // Estrazione e formattazione Provincia (es. MI) senza Regione né Italia
+      let prov = data.address.province || data.address.county || data.address['ISO3166-2-lvl6'] || '';
+      if (prov) {
+        prov = prov.replace(/^IT-/i, '');
+        if (prov.toLowerCase().includes('milano') || prov === 'MI') {
+          prov = '(MI)';
+        } else {
+          prov = `(${prov.replace(/^Provincia di /i, '').replace(/^Città Metropolitana di /i, '')})`;
+        }
+      }
 
-      const parts = [road, suburb, city, state, country].filter(Boolean);
+      // Costruzione Indirizzo: Via, Quartiere, Città, (Provincia)
+      const parts = [road, suburb, city, prov].filter(Boolean);
       const formatted = parts.length ? parts.join(', ') : data.display_name;
       geocodeCache.set(cacheKey, formatted);
       setAddrText(`Indirizzo: ${formatted}`);
@@ -106,7 +116,7 @@ async function updateGeoAddressUI(lat, lon) {
  * Updates header text (Station Name, RSSI, Geolocation status, Date Range Subtitle)
  */
 function updateHeaderUI(geoInfo, tStart, tEnd) {
-  document.getElementById('mainTitle').textContent = `Air Quality Index Device — ${currentStation.name}`;
+  document.getElementById('mainTitle').textContent = `Air Quality Index — ${currentStation.name}`;
   
   const subtitleEl = document.getElementById('dateSubtitle');
   if (subtitleEl) {
