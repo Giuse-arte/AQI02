@@ -367,7 +367,7 @@ function initApp() {
   STATIONS.forEach((st, idx) => {
     const opt = document.createElement('option');
     opt.value = idx.toString();
-    opt.textContent = `${st.name} — ${st.location}`;
+    opt.textContent = st.name;
     stationSelect.appendChild(opt);
   });
 
