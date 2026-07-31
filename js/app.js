@@ -336,6 +336,7 @@ function initApp() {
   const iconLight = themeToggleBtn ? themeToggleBtn.querySelector('.theme-icon-light') : null;
 
   function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
     document.body.setAttribute('data-theme', theme);
     localStorage.setItem('aqi_theme', theme);
 
