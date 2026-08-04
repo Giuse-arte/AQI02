@@ -37,30 +37,38 @@ function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
   // Sort feeds chronologically
   const feeds = [...rawFeedsStore].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-  // Compute 24h rolling moving average map for PM2.5 and PM10
+  // Compute 24h rolling moving average map for PM2.5 and PM10 in O(N) linear time
   const mavg25Map = {};
   const mavg10Map = {};
 
-  feeds.forEach((f) => {
-    const ts = new Date(f.created_at).getTime();
-    const cutoff = ts - 24 * 60 * 60 * 1000;
+  const parsed = feeds.map(f => ({
+    ts: new Date(f.created_at).getTime(),
+    v25: Number(f.field6),
+    v10: Number(f.field7)
+  }));
 
-    const window25 = feeds.filter(x => {
-      const t = new Date(x.created_at).getTime();
-      return t >= cutoff && t <= ts && !isNaN(Number(x.field6));
-    });
-    if (window25.length) {
-      mavg25Map[ts] = window25.reduce((s, x) => s + Number(x.field6), 0) / window25.length;
+  let win25Sum = 0, win25Count = 0, win25Start = 0;
+  let win10Sum = 0, win10Count = 0, win10Start = 0;
+
+  for (let i = 0; i < parsed.length; i++) {
+    const p = parsed[i];
+    const cutoff = p.ts - 24 * 60 * 60 * 1000;
+
+    if (!isNaN(p.v25)) { win25Sum += p.v25; win25Count++; }
+    if (!isNaN(p.v10)) { win10Sum += p.v10; win10Count++; }
+
+    while (win25Start < i && parsed[win25Start].ts < cutoff) {
+      if (!isNaN(parsed[win25Start].v25)) { win25Sum -= parsed[win25Start].v25; win25Count--; }
+      win25Start++;
+    }
+    while (win10Start < i && parsed[win10Start].ts < cutoff) {
+      if (!isNaN(parsed[win10Start].v10)) { win10Sum -= parsed[win10Start].v10; win10Count--; }
+      win10Start++;
     }
 
-    const window10 = feeds.filter(x => {
-      const t = new Date(x.created_at).getTime();
-      return t >= cutoff && t <= ts && !isNaN(Number(x.field7));
-    });
-    if (window10.length) {
-      mavg10Map[ts] = window10.reduce((s, x) => s + Number(x.field7), 0) / window10.length;
-    }
-  });
+    mavg25Map[p.ts] = win25Count > 0 ? win25Sum / win25Count : NaN;
+    mavg10Map[p.ts] = win10Count > 0 ? win10Sum / win10Count : NaN;
+  }
 
   const rows = [];
   rows.push(filename.replace('.csv', ''));

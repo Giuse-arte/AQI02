@@ -266,6 +266,9 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
   destroyAllCharts();
   containerEl.innerHTML = '';
 
+  // Limit processing feeds to the last 1500 items max for ultra-fast performance
+  const activeFeeds = feeds.length > 1500 ? feeds.slice(-1500) : feeds;
+
   const isExtended = ['week', 'month', 'year'].includes(viewMode);
   const aggFn = viewMode === 'year' ? aggregateDaily : isExtended ? aggregateHourly : null;
 
@@ -276,12 +279,12 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
     if (!selectedChartIds.includes(chartId)) return;
 
     if (chartId === 'combo') {
-      renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart, refEnd);
+      renderComboChart(containerEl, activeFeeds, viewMode, dayVal, aqiMode, tStart, refEnd);
       return;
     }
 
     if (chartId === '4') {
-      renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd);
+      renderVOCChart(containerEl, activeFeeds, viewMode, dayVal, refEnd);
       return;
     }
 
@@ -289,7 +292,7 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
     if (!meta) return;
 
     const fieldKey = `field${chartId}`;
-    const points = aggFn ? aggFn(feeds, fieldKey) : feeds.map(f => ({ x: new Date(f.created_at), y: Number(f[fieldKey]) }));
+    const points = aggFn ? aggFn(activeFeeds, fieldKey) : activeFeeds.map(f => ({ x: new Date(f.created_at), y: Number(f[fieldKey]) }));
 
     const card = document.createElement('div');
     card.className = 'chart-card';
@@ -400,6 +403,7 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
 
 /**
  * Render COMBO Chart (PM2.5 + PM10 24h Moving Averages + Dynamic Threshold Lines)
+ * Uses high-performance linear O(N) sliding window calculation
  */
 function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart, refEnd) {
   const card = document.createElement('div');
@@ -425,46 +429,44 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
 
   card.querySelector('#comboInfoBtn').onclick = openCOMBOInfoModal;
 
-  // 24h Moving Average Availability Rule
   const firstFeedTs = feeds.length ? new Date(feeds[0].created_at).getTime() : tStart.getTime();
   const availableFromTs = firstFeedTs + 24 * 60 * 60 * 1000;
 
-  const validFeeds = feeds.filter(f => new Date(f.created_at).getTime() >= availableFromTs);
+  // Pre-parse timestamps and numeric values in O(N)
+  const parsed = feeds.map(f => ({
+    ts: new Date(f.created_at).getTime(),
+    date: new Date(f.created_at),
+    v25: Number(f.field6),
+    v10: Number(f.field7)
+  }));
 
-  // If < 24h of historical data exist after start, show empty canvas frame with warning text
-  if (!validFeeds.length) {
-    const warning = document.createElement('div');
-    warning.className = 'combo-empty-warning';
-    warning.textContent = 'In attesa di 24 ore di storico dati per il calcolo della media mobile.';
-    card.querySelector('#comboCanvasContainer').appendChild(warning);
-  }
-
-  // Calculate 24h rolling moving averages
   const pm25Points = [];
   const pm10Points = [];
 
-  feeds.forEach(f => {
-    const ts = new Date(f.created_at).getTime();
-    if (ts < availableFromTs) return;
+  let win25Sum = 0, win25Count = 0, win25Start = 0;
+  let win10Sum = 0, win10Count = 0, win10Start = 0;
 
-    const cutoff = ts - 24 * 60 * 60 * 1000;
+  for (let i = 0; i < parsed.length; i++) {
+    const p = parsed[i];
+    const cutoff = p.ts - 24 * 60 * 60 * 1000;
 
-    const win25 = feeds.filter(x => {
-      const t = new Date(x.created_at).getTime();
-      return t >= cutoff && t <= ts && !isNaN(Number(x.field6));
-    });
-    if (win25.length) {
-      pm25Points.push({ x: new Date(f.created_at), y: win25.reduce((s, x) => s + Number(x.field6), 0) / win25.length });
+    if (!isNaN(p.v25)) { win25Sum += p.v25; win25Count++; }
+    if (!isNaN(p.v10)) { win10Sum += p.v10; win10Count++; }
+
+    while (win25Start < i && parsed[win25Start].ts < cutoff) {
+      if (!isNaN(parsed[win25Start].v25)) { win25Sum -= parsed[win25Start].v25; win25Count--; }
+      win25Start++;
+    }
+    while (win10Start < i && parsed[win10Start].ts < cutoff) {
+      if (!isNaN(parsed[win10Start].v10)) { win10Sum -= parsed[win10Start].v10; win10Count--; }
+      win10Start++;
     }
 
-    const win10 = feeds.filter(x => {
-      const t = new Date(x.created_at).getTime();
-      return t >= cutoff && t <= ts && !isNaN(Number(x.field7));
-    });
-    if (win10.length) {
-      pm10Points.push({ x: new Date(f.created_at), y: win10.reduce((s, x) => s + Number(x.field7), 0) / win10.length });
+    if (p.ts >= availableFromTs) {
+      if (win25Count > 0) pm25Points.push({ x: p.date, y: win25Sum / win25Count });
+      if (win10Count > 0) pm10Points.push({ x: p.date, y: win10Sum / win10Count });
     }
-  });
+  }
 
   const datasets = [
     {
