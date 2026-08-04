@@ -118,14 +118,17 @@ function getTooltipConfig() {
 }
 
 /**
- * Generates X-Axis scale configuration based on active view mode
+ * Generates X-Axis scale configuration based on active view mode and reference end date
  */
-function getXAxisConfig(viewMode, dayVal) {
-  const now = new Date();
+function getXAxisConfig(viewMode, dayVal, refEnd) {
+  const referenceEnd = refEnd || new Date();
 
   if (viewMode === 'year') {
+    const axisStart = new Date(referenceEnd.getTime() - 365 * 24 * 60 * 60 * 1000);
     return {
       type: 'time',
+      min: axisStart,
+      max: referenceEnd,
       time: { unit: 'month', stepSize: 1 },
       ticks: {
         autoSkip: false,
@@ -142,20 +145,17 @@ function getXAxisConfig(viewMode, dayVal) {
   }
 
   if (viewMode === 'month') {
-    const axisStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    axisStart.setHours(0, 0, 0, 0);
-    const axisEnd = new Date(now);
-    axisEnd.setHours(23, 59, 59, 999);
+    const axisStart = new Date(referenceEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     return {
       type: 'time',
       min: axisStart,
-      max: axisEnd,
+      max: referenceEnd,
       time: { unit: 'hour', stepSize: 1 },
       afterBuildTicks: function (axis) {
         const ticks = [];
-        let t = new Date(axisStart).getTime();
-        while (t <= axisEnd.getTime()) {
+        let t = Math.ceil(axisStart.getTime() / 3600000) * 3600000;
+        while (t <= referenceEnd.getTime()) {
           ticks.push({ value: t });
           t += 3600000;
         }
@@ -180,19 +180,17 @@ function getXAxisConfig(viewMode, dayVal) {
   }
 
   if (viewMode === 'week') {
-    const axisEnd = new Date(now);
-    axisEnd.setHours(23, 59, 59, 999);
-    const axisStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const axisStart = new Date(referenceEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     return {
       type: 'time',
       min: axisStart,
-      max: axisEnd,
+      max: referenceEnd,
       time: { unit: 'hour', stepSize: 1 },
       afterBuildTicks: function (axis) {
         const ticks = [];
         let t = Math.ceil(axisStart.getTime() / 3600000) * 3600000;
-        while (t <= axisEnd.getTime()) {
+        while (t <= referenceEnd.getTime()) {
           ticks.push({ value: t });
           t += 3600000;
         }
@@ -215,8 +213,8 @@ function getXAxisConfig(viewMode, dayVal) {
   }
 
   // Live / Day modes
-  const liveMin = viewMode === 'live' ? new Date(now.getTime() - 24 * 60 * 60 * 1000) : undefined;
-  const liveMax = viewMode === 'live' ? now : undefined;
+  const liveMin = viewMode === 'live' ? new Date(referenceEnd.getTime() - 24 * 60 * 60 * 1000) : undefined;
+  const liveMax = viewMode === 'live' ? referenceEnd : undefined;
 
   return {
     type: 'time',
@@ -264,7 +262,7 @@ function destroyAllCharts() {
 /**
  * Main Chart Rendering Orchestrator
  */
-function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayVal, aqiMode, tStart) {
+function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayVal, aqiMode, tStart, refEnd) {
   destroyAllCharts();
   containerEl.innerHTML = '';
 
@@ -278,12 +276,12 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
     if (!selectedChartIds.includes(chartId)) return;
 
     if (chartId === 'combo') {
-      renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart);
+      renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart, refEnd);
       return;
     }
 
     if (chartId === '4') {
-      renderVOCChart(containerEl, feeds, viewMode, dayVal);
+      renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd);
       return;
     }
 
@@ -331,7 +329,7 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
           tooltip: getTooltipConfig()
         },
         scales: {
-          x: getXAxisConfig(viewMode, dayVal),
+          x: getXAxisConfig(viewMode, dayVal, refEnd),
           y: {
             beginAtZero: false,
             title: { display: true, text: meta.unit, color: '#94a3b8' },
@@ -347,7 +345,7 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
 /**
  * Render VOC Delta Chart
  */
-function renderVOCChart(containerEl, feeds, viewMode, dayVal) {
+function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
   const { points } = calculateVOCBaselineAndDelta(feeds, feeds);
 
   const card = document.createElement('div');
@@ -388,7 +386,7 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal) {
         tooltip: getTooltipConfig()
       },
       scales: {
-        x: getXAxisConfig(viewMode, dayVal),
+        x: getXAxisConfig(viewMode, dayVal, refEnd),
         y: {
           beginAtZero: false,
           title: { display: true, text: 'Delta kOhm', color: '#94a3b8' },
@@ -403,7 +401,7 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal) {
 /**
  * Render COMBO Chart (PM2.5 + PM10 24h Moving Averages + Dynamic Threshold Lines)
  */
-function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart) {
+function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart, refEnd) {
   const card = document.createElement('div');
   card.className = 'chart-card';
   card.id = 'card_combo';
@@ -516,7 +514,7 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart)
         tooltip: getTooltipConfig()
       },
       scales: {
-        x: getXAxisConfig(viewMode, dayVal),
+        x: getXAxisConfig(viewMode, dayVal, refEnd),
         y: {
           beginAtZero: false,
           title: { display: true, text: 'µg/m³', color: '#94a3b8' },
