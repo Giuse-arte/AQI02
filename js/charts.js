@@ -6,6 +6,14 @@
 const chartInstances = {};
 
 /**
+ * Helper to check whether Light Theme is active
+ */
+function isLightTheme() {
+  const t = document.body.getAttribute('data-theme') || document.documentElement.getAttribute('data-theme');
+  return t === 'light';
+}
+
+/**
  * Custom Hour Grid plugin for drawing background grid lines on time axes
  */
 function registerHourGridPlugin() {
@@ -28,6 +36,12 @@ function registerHourGridPlugin() {
 
       if (vm === 'year') return;
 
+      const isLight = isLightTheme();
+      const majorColor = isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.15)';
+      const minorColor = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
+      const liveMajor = isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.12)';
+      const liveMinor = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
+
       if (vm === 'month' || vm === 'week') {
         let t = Math.ceil(min / 3600000) * 3600000;
         while (t <= max) {
@@ -36,13 +50,13 @@ function registerHourGridPlugin() {
           let lineWidth = 0;
 
           if (hour === 0) {
-            strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            strokeStyle = majorColor;
             lineWidth = 1.2;
           } else if (vm === 'month' && (hour === 8 || hour === 16)) {
-            strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            strokeStyle = minorColor;
             lineWidth = 0.8;
           } else if (vm === 'week' && (hour === 6 || hour === 12 || hour === 18)) {
-            strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            strokeStyle = minorColor;
             lineWidth = 0.8;
           }
 
@@ -73,7 +87,7 @@ function registerHourGridPlugin() {
         ctx.beginPath();
         ctx.moveTo(x, top);
         ctx.lineTo(x, bottom);
-        ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.04)';
+        ctx.strokeStyle = isMajor ? liveMajor : liveMinor;
         ctx.lineWidth = isMajor ? 1.2 : 0.8;
         ctx.stroke();
         ctx.restore();
@@ -84,15 +98,16 @@ function registerHourGridPlugin() {
 }
 
 /**
- * Standard dark theme tooltip configuration
+ * Standard dark/light theme tooltip configuration
  */
 function getTooltipConfig() {
+  const isLight = isLightTheme();
   return {
     enabled: true,
-    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-    titleColor: '#38bdf8',
-    bodyColor: '#f8fafc',
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(15, 23, 42, 0.95)',
+    titleColor: isLight ? '#0284c7' : '#38bdf8',
+    bodyColor: isLight ? '#0f172a' : '#f8fafc',
+    borderColor: isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1,
     padding: 12,
     cornerRadius: 8,
@@ -118,10 +133,13 @@ function getTooltipConfig() {
 }
 
 /**
- * Generates X-Axis scale configuration based on active view mode and reference end date
+ * Generates X-Axis scale configuration based on active view mode, reference end date, and active theme
  */
 function getXAxisConfig(viewMode, dayVal, refEnd) {
   const referenceEnd = refEnd || new Date();
+  const isLight = isLightTheme();
+  const tickColor = isLight ? '#475569' : '#94a3b8';
+  const gridColor = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)';
 
   if (viewMode === 'year') {
     const axisStart = new Date(referenceEnd.getTime() - 365 * 24 * 60 * 60 * 1000);
@@ -133,14 +151,14 @@ function getXAxisConfig(viewMode, dayVal, refEnd) {
       ticks: {
         autoSkip: false,
         maxRotation: 45,
-        color: '#94a3b8',
+        color: tickColor,
         callback: function (val) {
           const d = new Date(val);
           if (d.getMonth() === 0) return d.getFullYear().toString();
           return d.toLocaleDateString('en-US', { month: 'short' });
         }
       },
-      grid: { color: 'rgba(255,255,255,0.05)', lineWidth: 1 }
+      grid: { color: gridColor, lineWidth: 1 }
     };
   }
 
@@ -164,7 +182,7 @@ function getXAxisConfig(viewMode, dayVal, refEnd) {
       ticks: {
         autoSkip: false,
         maxRotation: 45,
-        color: '#94a3b8',
+        color: tickColor,
         callback: function (val) {
           const d = new Date(val);
           const hrs = d.getHours();
@@ -199,7 +217,7 @@ function getXAxisConfig(viewMode, dayVal, refEnd) {
       ticks: {
         autoSkip: false,
         maxRotation: 45,
-        color: '#94a3b8',
+        color: tickColor,
         callback: function (val) {
           const d = new Date(val);
           if (d.getHours() === 0) {
@@ -234,7 +252,7 @@ function getXAxisConfig(viewMode, dayVal, refEnd) {
     ticks: {
       autoSkip: false,
       maxRotation: 45,
-      color: '#94a3b8',
+      color: tickColor,
       callback: function (val) {
         const d = new Date(val);
         const hrs = d.getHours();
@@ -266,11 +284,13 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
   destroyAllCharts();
   containerEl.innerHTML = '';
 
-  // Limit processing feeds to the last 1500 items max for ultra-fast performance
   const activeFeeds = feeds.length > 1500 ? feeds.slice(-1500) : feeds;
-
   const isExtended = ['week', 'month', 'year'].includes(viewMode);
   const aggFn = viewMode === 'year' ? aggregateDaily : isExtended ? aggregateHourly : null;
+
+  const isLight = isLightTheme();
+  const yTickColor = isLight ? '#475569' : '#94a3b8';
+  const yGridColor = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.06)';
 
   // Fixed display order: 5 (PM1), 6 (PM2.5), 7 (PM10), combo, 1 (Hum), 2 (Temp), 3 (Pres), 4 (VOC)
   const renderOrder = ['5', '6', '7', 'combo', '1', '2', '3', '4'];
@@ -335,9 +355,9 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
           x: getXAxisConfig(viewMode, dayVal, refEnd),
           y: {
             beginAtZero: false,
-            title: { display: true, text: meta.unit, color: '#94a3b8' },
-            ticks: { color: '#94a3b8' },
-            grid: { color: 'rgba(255,255,255,0.06)', lineWidth: 0.8 }
+            title: { display: true, text: meta.unit, color: yTickColor },
+            ticks: { color: yTickColor },
+            grid: { color: yGridColor, lineWidth: 0.8 }
           }
         }
       }
@@ -350,6 +370,10 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
  */
 function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
   const { points } = calculateVOCBaselineAndDelta(feeds, feeds);
+
+  const isLight = isLightTheme();
+  const yTickColor = isLight ? '#475569' : '#94a3b8';
+  const yGridColor = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.06)';
 
   const card = document.createElement('div');
   card.className = 'chart-card';
@@ -392,9 +416,9 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
         x: getXAxisConfig(viewMode, dayVal, refEnd),
         y: {
           beginAtZero: false,
-          title: { display: true, text: 'Delta kOhm', color: '#94a3b8' },
-          ticks: { color: '#94a3b8' },
-          grid: { color: 'rgba(255,255,255,0.06)', lineWidth: 0.8 }
+          title: { display: true, text: 'Delta kOhm', color: yTickColor },
+          ticks: { color: yTickColor },
+          grid: { color: yGridColor, lineWidth: 0.8 }
         }
       }
     }
@@ -403,9 +427,12 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
 
 /**
  * Render COMBO Chart (PM2.5 + PM10 24h Moving Averages + Dynamic Threshold Lines)
- * Uses high-performance linear O(N) sliding window calculation
  */
 function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart, refEnd) {
+  const isLight = isLightTheme();
+  const yTickColor = isLight ? '#475569' : '#94a3b8';
+  const yGridColor = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.06)';
+
   const card = document.createElement('div');
   card.className = 'chart-card';
   card.id = 'card_combo';
@@ -432,7 +459,6 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
   const firstFeedTs = feeds.length ? new Date(feeds[0].created_at).getTime() : tStart.getTime();
   const availableFromTs = firstFeedTs + 24 * 60 * 60 * 1000;
 
-  // Pre-parse timestamps and numeric values in O(N)
   const parsed = feeds.map(f => ({
     ts: new Date(f.created_at).getTime(),
     date: new Date(f.created_at),
@@ -519,9 +545,9 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
         x: getXAxisConfig(viewMode, dayVal, refEnd),
         y: {
           beginAtZero: false,
-          title: { display: true, text: 'µg/m³', color: '#94a3b8' },
-          ticks: { color: '#94a3b8' },
-          grid: { color: 'rgba(255,255,255,0.06)', lineWidth: 0.8 }
+          title: { display: true, text: 'µg/m³', color: yTickColor },
+          ticks: { color: yTickColor },
+          grid: { color: yGridColor, lineWidth: 0.8 }
         }
       }
     }
