@@ -355,6 +355,7 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
           x: getXAxisConfig(viewMode, dayVal, refEnd),
           y: {
             beginAtZero: false,
+            grace: '10%',
             title: { display: true, text: meta.unit, color: yTickColor },
             ticks: { color: yTickColor },
             grid: { color: yGridColor, lineWidth: 0.8 }
@@ -416,6 +417,7 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
         x: getXAxisConfig(viewMode, dayVal, refEnd),
         y: {
           beginAtZero: false,
+          grace: '10%',
           title: { display: true, text: 'Delta kOhm', color: yTickColor },
           ticks: { color: yTickColor },
           grid: { color: yGridColor, lineWidth: 0.8 }
@@ -545,6 +547,7 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
         x: getXAxisConfig(viewMode, dayVal, refEnd),
         y: {
           beginAtZero: false,
+          grace: '10%',
           title: { display: true, text: 'µg/m³', color: yTickColor },
           ticks: { color: yTickColor },
           grid: { color: yGridColor, lineWidth: 0.8 }
