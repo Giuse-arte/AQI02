@@ -255,31 +255,11 @@ async function refreshDashboard() {
     const lastRealFeed = feeds.at(-1);
     const geoInfo = parseGeoAndRssi(channelInfo, lastRealFeed);
 
-    let effectiveEnd = tEnd;
-    let effectiveStart = tStart;
-
-    if (lastRealFeed) {
-      const lastFeedDate = new Date(lastRealFeed.created_at);
-      // If station is offline (> 24h since last feed), anchor timeline to lastFeedDate
-      if (new Date().getTime() - lastFeedDate.getTime() > 24 * 60 * 60 * 1000) {
-        effectiveEnd = lastFeedDate;
-        if (state.viewMode === 'live') {
-          effectiveStart = new Date(effectiveEnd.getTime() - 24 * 60 * 60 * 1000);
-        } else if (state.viewMode === 'week') {
-          effectiveStart = new Date(effectiveEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
-        } else if (state.viewMode === 'month') {
-          effectiveStart = new Date(effectiveEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
-        } else if (state.viewMode === 'year') {
-          effectiveStart = new Date(effectiveEnd.getTime() - 365 * 24 * 60 * 60 * 1000);
-        }
-      }
-    }
-
-    updateHeaderUI(geoInfo, effectiveStart, effectiveEnd);
+    updateHeaderUI(geoInfo, tStart, tEnd);
     updateKPICards(feeds);
 
     const chartsContainer = document.getElementById('chartsContainer');
-    renderActiveCharts(chartsContainer, feeds, state.charts, state.viewMode, state.day, state.mode, effectiveStart, effectiveEnd);
+    renderActiveCharts(chartsContainer, feeds, state.charts, state.viewMode, state.day, state.mode, tStart, tEnd);
   }, 250);
 }
 
