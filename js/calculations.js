@@ -2,22 +2,20 @@
    AQI DASHBOARD 2.0 - CALCULATIONS & DATA AGGREGATION
    ========================================================================== */
 
-import { EEA_THRESHOLDS, EPA_BREAKPOINTS } from './config.js';
-
 /**
  * Format helper: 1 decimal string or '—' if invalid
  */
-export const fmt1 = v => (v == null || isNaN(v) ? '—' : Number(v).toFixed(1));
+const fmt1 = v => (v == null || isNaN(v) ? '—' : Number(v).toFixed(1));
 
 /**
  * Format helper: integer string or '—' if invalid
  */
-export const fmt0 = v => (v == null || isNaN(v) ? '—' : Math.round(Number(v)).toString());
+const fmt0 = v => (v == null || isNaN(v) ? '—' : Math.round(Number(v)).toString());
 
 /**
  * Compute EEA AQI category badge & color based on PM2.5 and PM10 24h moving averages
  */
-export function computeEEAAQI(pm25_24, pm10_24) {
+function computeEEAAQI(pm25_24, pm10_24) {
   const clsPM25 = pm25_24 <= EEA_THRESHOLDS.PM25[0] ? 1 :
                   pm25_24 <= EEA_THRESHOLDS.PM25[1] ? 2 :
                   pm25_24 <= EEA_THRESHOLDS.PM25[2] ? 3 :
@@ -43,7 +41,7 @@ export function computeEEAAQI(pm25_24, pm10_24) {
 /**
  * Compute EPA numerical AQI value (0-500) and color band via piecewise linear interpolation
  */
-export function computeEPAAQI(pm25_24, pm10_24) {
+function computeEPAAQI(pm25_24, pm10_24) {
   const calcSegment = (c, breakpoints) => {
     for (const [Clo, Chi, Ilo, Ihi] of breakpoints) {
       if (c >= Clo && c <= Chi) {
@@ -76,7 +74,7 @@ export function computeEPAAQI(pm25_24, pm10_24) {
 /**
  * Aggregate feeds into hourly points (averaging consecutive feeds per hour)
  */
-export function aggregateHourly(feeds, field) {
+function aggregateHourly(feeds, field) {
   const valid = feeds.filter(f => !isNaN(Number(f[field])));
   if (!valid.length) return [];
 
@@ -99,7 +97,7 @@ export function aggregateHourly(feeds, field) {
 /**
  * Aggregate feeds into daily points (calendar day averages)
  */
-export function aggregateDaily(feeds, field) {
+function aggregateDaily(feeds, field) {
   const map = {};
   feeds.forEach(f => {
     const d = new Date(f.created_at);
@@ -120,11 +118,10 @@ export function aggregateDaily(feeds, field) {
 /**
  * Calculate VOC 24h baseline and relative deltas
  */
-export function calculateVOCBaselineAndDelta(allFeeds, feedsInRange) {
+function calculateVOCBaselineAndDelta(allFeeds, feedsInRange) {
   const now = new Date();
   const cutoff24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  // Baseline = average of valid VOC values in real last 24h
   const valid24h = allFeeds.filter(f => new Date(f.created_at) >= cutoff24h && !isNaN(Number(f.field4)));
   
   let baseline = 0;
@@ -152,7 +149,7 @@ export function calculateVOCBaselineAndDelta(allFeeds, feedsInRange) {
 /**
  * Calculate 24h rolling moving average series for PM fields
  */
-export function calculateMovingAverageSeries(feeds, field) {
+function calculateMovingAverageSeries(feeds, field) {
   return feeds.map((f, i) => {
     const ts = new Date(f.created_at).getTime();
     const cutoff = ts - 24 * 60 * 60 * 1000;

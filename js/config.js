@@ -3,13 +3,13 @@
    ========================================================================== */
 
 // Externalized Stations Configuration - Add new stations here effortlessly
-export const STATIONS = [
+const STATIONS = [
   { id: 2789658, apiKey: '4IMIXLC0RWW9K4PA', name: 'Device N° AQI_01', location: 'Stazione Primaria' },
   { id: 3412629, apiKey: 'HP8HM37WZ9BAVB4A', name: 'Device N° AQI_02', location: 'Stazione Secondaria' }
 ];
 
 // EEA (European Environment Agency) Classifications & Thresholds
-export const EEA_THRESHOLDS = {
+const EEA_THRESHOLDS = {
   PM25: [10, 20, 25, 50],
   PM10: [20, 40, 50, 100],
   CLASSES: {
@@ -22,7 +22,7 @@ export const EEA_THRESHOLDS = {
 };
 
 // EPA (US Environmental Protection Agency) Breakpoints & Colors
-export const EPA_BREAKPOINTS = {
+const EPA_BREAKPOINTS = {
   PM25: [
     [0, 12.0, 0, 50],
     [12.1, 35.4, 51, 100],
@@ -50,7 +50,7 @@ export const EPA_BREAKPOINTS = {
 };
 
 // Chart Metadata Mapping
-export const CHART_META = {
+const CHART_META = {
   1: { title: 'Umidità', sensor: 'BME680', unit: '%', min: 0, max: 100, color: '#38bdf8' },
   2: { title: 'Temperatura', sensor: 'BME680', unit: '°C', min: -10, max: 60, color: '#f43f5e' },
   3: { title: 'Pressione', sensor: 'BME680', unit: 'hPa', min: 900, max: 1100, color: '#c084fc' },
@@ -61,7 +61,7 @@ export const CHART_META = {
 };
 
 // Default Factory Visualization Preferences
-export const DEFAULT_PREFERENCES = {
+const DEFAULT_PREFERENCES = {
   viewMode: 'live',
   day: '',
   startDate: '',

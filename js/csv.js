@@ -8,7 +8,7 @@
  * - Decimal separator: ','
  * - Columns: date;time;year;month;temp;hum;pres;voc;PM1;PM2_5;PM2_5_mavg;PM10;PM10_mavg
  */
-export function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
+function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
   if (!rawFeedsStore || !rawFeedsStore.length) {
     alert('Nessun dato disponibile da esportare.');
     return;

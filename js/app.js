@@ -2,14 +2,6 @@
    AQI DASHBOARD 2.0 - MAIN CONTROLLER & APPLICATION ENTRY POINT
    ========================================================================== */
 
-import { STATIONS } from './config.js';
-import { fetchChannelFeeds, fetchLatestChannelFeeds, parseGeoAndRssi, getDemoData } from './api.js';
-import { fmt0, fmt1, computeEEAAQI, computeEPAAQI, calculateVOCBaselineAndDelta } from './calculations.js';
-import { loadStationPreferences, saveStationPreferences, resetStationPreferencesKeepField, migrateLegacyPreferences } from './storage.js';
-import { exportCSVData } from './csv.js';
-import { openAQIInfoModal, showResetConfirmationModal } from './modal.js';
-import { registerHourGridPlugin, renderActiveCharts } from './charts.js';
-
 // Application State
 let activeStationIdx = 0;
 let currentStation = STATIONS[0];
@@ -275,7 +267,8 @@ async function refreshDashboard() {
  * Sync UI control inputs with active state
  */
 function syncControlsUI() {
-  document.getElementById('stationSelect').value = activeStationIdx.toString();
+  const stationSelect = document.getElementById('stationSelect');
+  if (stationSelect) stationSelect.value = activeStationIdx.toString();
   document.getElementById('viewMode').value = state.viewMode;
   document.getElementById('day').value = state.day || '';
   document.getElementById('startDate').value = state.startDate || '';
@@ -338,7 +331,9 @@ function initApp() {
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('aqi_theme', theme);
+    try {
+      localStorage.setItem('aqi_theme', theme);
+    } catch (e) {}
 
     if (theme === 'light') {
       if (themeToggleText) themeToggleText.textContent = 'Tema Scuro';
@@ -351,7 +346,10 @@ function initApp() {
     }
   }
 
-  const savedTheme = localStorage.getItem('aqi_theme') || 'dark';
+  let savedTheme = 'dark';
+  try {
+    savedTheme = localStorage.getItem('aqi_theme') || 'dark';
+  } catch (e) {}
   applyTheme(savedTheme);
 
   if (themeToggleBtn) {
@@ -364,15 +362,20 @@ function initApp() {
   }
 
   const stationSelect = document.getElementById('stationSelect');
-  stationSelect.innerHTML = '';
-  STATIONS.forEach((st, idx) => {
-    const opt = document.createElement('option');
-    opt.value = idx.toString();
-    opt.textContent = st.name;
-    stationSelect.appendChild(opt);
-  });
+  if (stationSelect) {
+    stationSelect.innerHTML = '';
+    STATIONS.forEach((st, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx.toString();
+      opt.textContent = st.name;
+      stationSelect.appendChild(opt);
+    });
+  }
 
-  const savedIdx = localStorage.getItem('aqi_station_idx');
+  let savedIdx = null;
+  try {
+    savedIdx = localStorage.getItem('aqi_station_idx');
+  } catch (e) {}
   if (savedIdx !== null && STATIONS[savedIdx]) {
     activeStationIdx = Number(savedIdx);
   }
@@ -381,18 +384,22 @@ function initApp() {
   syncControlsUI();
 
   // Station Select Listener
-  stationSelect.addEventListener('change', (e) => {
-    const newIdx = Number(e.target.value);
-    activeStationIdx = newIdx;
-    currentStation = STATIONS[newIdx];
-    localStorage.setItem('aqi_station_idx', newIdx.toString());
+  if (stationSelect) {
+    stationSelect.addEventListener('change', (e) => {
+      const newIdx = Number(e.target.value);
+      activeStationIdx = newIdx;
+      currentStation = STATIONS[newIdx];
+      try {
+        localStorage.setItem('aqi_station_idx', newIdx.toString());
+      } catch (err) {}
 
-    state = loadStationPreferences(newIdx);
-    syncControlsUI();
-    refreshDashboard();
+      state = loadStationPreferences(newIdx);
+      syncControlsUI();
+      refreshDashboard();
 
-    document.getElementById('panelDropdown').style.display = 'none';
-  });
+      document.getElementById('panelDropdown').style.display = 'none';
+    });
+  }
 
   // View Mode Change
   document.getElementById('viewMode').addEventListener('change', (e) => {
@@ -436,17 +443,19 @@ function initApp() {
   const togglePanelBtn = document.getElementById('togglePanelBtn');
   const panelDropdown = document.getElementById('panelDropdown');
 
-  togglePanelBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isOpen = panelDropdown.style.display === 'flex';
-    panelDropdown.style.display = isOpen ? 'none' : 'flex';
-  });
+  if (togglePanelBtn && panelDropdown) {
+    togglePanelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = panelDropdown.style.display === 'flex';
+      panelDropdown.style.display = isOpen ? 'none' : 'flex';
+    });
 
-  document.addEventListener('click', () => {
-    panelDropdown.style.display = 'none';
-  });
+    document.addEventListener('click', () => {
+      panelDropdown.style.display = 'none';
+    });
 
-  panelDropdown.addEventListener('click', (e) => e.stopPropagation());
+    panelDropdown.addEventListener('click', (e) => e.stopPropagation());
+  }
 
   // Select All / Deselect All Chart Checkboxes
   document.getElementById('selectAllBtn').addEventListener('click', () => {
@@ -475,4 +484,8 @@ function initApp() {
 }
 
 // Run init on DOM ready
-document.addEventListener('DOMContentLoaded', initApp);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}

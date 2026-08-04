@@ -5,7 +5,7 @@
 /**
  * Format local JS Date to ThingSpeak API string format (YYYY-MM-DD HH:mm:ss)
  */
-export function formatLocalDateTime(d) {
+function formatLocalDateTime(d) {
   const pad = n => n.toString().padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
@@ -13,7 +13,7 @@ export function formatLocalDateTime(d) {
 /**
  * Fallback demo data used ONLY when network/HTTP request completely fails
  */
-export function getDemoData() {
+function getDemoData() {
   const now = new Date();
   const feeds = [];
   
@@ -38,7 +38,7 @@ export function getDemoData() {
 /**
  * Fetch latest historical feeds from ThingSpeak without date restrictions (up to 8000 latest feeds)
  */
-export async function fetchLatestChannelFeeds(channelId, apiKey) {
+async function fetchLatestChannelFeeds(channelId, apiKey) {
   const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?results=8000&api_key=${apiKey}`;
 
   try {
@@ -55,7 +55,7 @@ export async function fetchLatestChannelFeeds(channelId, apiKey) {
 /**
  * Fetch feeds from ThingSpeak REST API for a given station channel & date range
  */
-export async function fetchChannelFeeds(channelId, apiKey, tStart, tEnd) {
+async function fetchChannelFeeds(channelId, apiKey, tStart, tEnd) {
   const startBuffer = new Date(tStart.getTime() - 24 * 60 * 60 * 1000);
   const startStr = formatLocalDateTime(startBuffer);
   const endStr = formatLocalDateTime(tEnd);
@@ -86,7 +86,7 @@ export async function fetchChannelFeeds(channelId, apiKey, tStart, tEnd) {
 /**
  * Parses Geolocation metadata and RSSI strictly from the latest feed reading and channel settings
  */
-export function parseGeoAndRssi(channelObj, lastFeed) {
+function parseGeoAndRssi(channelObj, lastFeed) {
   let manualGeo = { lat: null, lon: null };
   const chLat = parseFloat(channelObj?.latitude);
   const chLon = parseFloat(channelObj?.longitude);
@@ -98,7 +98,6 @@ export function parseGeoAndRssi(channelObj, lastFeed) {
   const f8 = lastFeed?.field8;
   let rssi = NaN;
   if (f8 !== undefined && f8 !== null && f8 !== '') {
-    // RSSI is always the first token before ';' in field8
     rssi = Number(String(f8).split(';')[0]);
   }
 

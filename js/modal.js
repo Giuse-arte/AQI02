@@ -5,14 +5,14 @@
 /**
  * Remove any active modal overlays
  */
-export function closeModal() {
+function closeModal() {
   document.querySelectorAll('.modal-overlay, .modal-container').forEach(el => el.remove());
 }
 
 /**
  * Opens AQI Threshold Info Modal with interactive tabs (EEA vs EPA)
  */
-export function openAQIInfoModal(activeMode = 'EEA') {
+function openAQIInfoModal(activeMode = 'EEA') {
   closeModal();
 
   const overlay = document.createElement('div');
@@ -116,7 +116,7 @@ export function openAQIInfoModal(activeMode = 'EEA') {
 /**
  * Opens COMBO Chart Info Modal detailing thresholds
  */
-export function openCOMBOInfoModal() {
+function openCOMBOInfoModal() {
   closeModal();
 
   const overlay = document.createElement('div');
@@ -160,7 +160,7 @@ export function openCOMBOInfoModal() {
 /**
  * Custom Dark Glass Confirmation Modal for "Data Inizio" field changes
  */
-export function showResetConfirmationModal(fieldName, newValue, onConfirm, onCancel) {
+function showResetConfirmationModal(fieldName, newValue, onConfirm, onCancel) {
   closeModal();
 
   const overlay = document.createElement('div');

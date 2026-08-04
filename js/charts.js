@@ -2,18 +2,14 @@
    AQI DASHBOARD 2.0 - CHART.JS RENDERING ENGINE
    ========================================================================== */
 
-import { CHART_META } from './config.js';
-import { aggregateHourly, aggregateDaily, calculateVOCBaselineAndDelta } from './calculations.js';
-import { openCOMBOInfoModal } from './modal.js';
-
 // Active chart instances store
 const chartInstances = {};
 
 /**
  * Custom Hour Grid plugin for drawing background grid lines on time axes
  */
-export function registerHourGridPlugin() {
-  if (Chart.registry.plugins.get('hourGrid')) return;
+function registerHourGridPlugin() {
+  if (typeof Chart === 'undefined' || Chart.registry.plugins.get('hourGrid')) return;
 
   Chart.register({
     id: 'hourGrid',
@@ -32,8 +28,6 @@ export function registerHourGridPlugin() {
 
       if (vm === 'year') return;
 
-      const isLight = document.body.getAttribute('data-theme') === 'light';
-
       if (vm === 'month' || vm === 'week') {
         let t = Math.ceil(min / 3600000) * 3600000;
         while (t <= max) {
@@ -42,13 +36,13 @@ export function registerHourGridPlugin() {
           let lineWidth = 0;
 
           if (hour === 0) {
-            strokeStyle = isLight ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.22)';
+            strokeStyle = 'rgba(255, 255, 255, 0.15)';
             lineWidth = 1.2;
           } else if (vm === 'month' && (hour === 8 || hour === 16)) {
-            strokeStyle = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.08)';
+            strokeStyle = 'rgba(255, 255, 255, 0.05)';
             lineWidth = 0.8;
           } else if (vm === 'week' && (hour === 6 || hour === 12 || hour === 18)) {
-            strokeStyle = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.08)';
+            strokeStyle = 'rgba(255, 255, 255, 0.05)';
             lineWidth = 0.8;
           }
 
@@ -68,7 +62,7 @@ export function registerHourGridPlugin() {
         return;
       }
 
-      // Live & Day modes - vertical line for every hour
+      // Live & Day modes
       let tLive = Math.ceil(min / 3600000) * 3600000;
       while (tLive <= max) {
         const x = xScale.getPixelForValue(tLive);
@@ -79,9 +73,7 @@ export function registerHourGridPlugin() {
         ctx.beginPath();
         ctx.moveTo(x, top);
         ctx.lineTo(x, bottom);
-        ctx.strokeStyle = isMajor
-          ? (isLight ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.20)')
-          : (isLight ? 'rgba(0, 0, 0, 0.11)' : 'rgba(255, 255, 255, 0.08)');
+        ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.04)';
         ctx.lineWidth = isMajor ? 1.2 : 0.8;
         ctx.stroke();
         ctx.restore();
@@ -94,44 +86,41 @@ export function registerHourGridPlugin() {
 /**
  * Standard dark theme tooltip configuration
  */
-export const getTooltipConfig = () => ({
-  enabled: true,
-  backgroundColor: 'rgba(15, 23, 42, 0.95)',
-  titleColor: '#38bdf8',
-  bodyColor: '#f8fafc',
-  borderColor: 'rgba(255, 255, 255, 0.15)',
-  borderWidth: 1,
-  padding: 12,
-  cornerRadius: 8,
-  intersect: false,
-  mode: 'nearest',
-  titleFont: { size: 12, weight: 'bold', family: 'Inter' },
-  bodyFont: { size: 12, family: 'Inter' },
-  callbacks: {
-    title: function (items) {
-      if (!items.length) return '';
-      const date = new Date(items[0].parsed.x);
-      return `Data e Ora: ${date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
-    },
-    label: function (item) {
-      const label = item.dataset.label || '';
-      const value = item.parsed.y;
-      if (value == null || isNaN(value)) return '';
-      if (label.includes('Limite')) return '';
-      return ` ${label ? label + ': ' : ''}${Number(value).toFixed(2)}`;
+function getTooltipConfig() {
+  return {
+    enabled: true,
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    titleColor: '#38bdf8',
+    bodyColor: '#f8fafc',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    padding: 12,
+    cornerRadius: 8,
+    intersect: false,
+    mode: 'nearest',
+    titleFont: { size: 12, weight: 'bold', family: 'Inter' },
+    bodyFont: { size: 12, family: 'Inter' },
+    callbacks: {
+      title: function (items) {
+        if (!items.length) return '';
+        const date = new Date(items[0].parsed.x);
+        return `Data e Ora: ${date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+      },
+      label: function (item) {
+        const label = item.dataset.label || '';
+        const value = item.parsed.y;
+        if (value == null || isNaN(value)) return '';
+        if (label.includes('Limite')) return '';
+        return ` ${label ? label + ': ' : ''}${Number(value).toFixed(2)}`;
+      }
     }
-  }
-});
-
-export function getGridColor() {
-  const isLight = document.body.getAttribute('data-theme') === 'light';
-  return isLight ? 'rgba(0, 0, 0, 0.14)' : 'rgba(255, 255, 255, 0.12)';
+  };
 }
 
 /**
  * Generates X-Axis scale configuration based on active view mode
  */
-export function getXAxisConfig(viewMode, dayVal) {
+function getXAxisConfig(viewMode, dayVal) {
   const now = new Date();
 
   if (viewMode === 'year') {
@@ -263,7 +252,7 @@ export function getXAxisConfig(viewMode, dayVal) {
 /**
  * Destroys all active chart instances
  */
-export function destroyAllCharts() {
+function destroyAllCharts() {
   Object.keys(chartInstances).forEach(k => {
     if (chartInstances[k]) {
       chartInstances[k].destroy();
@@ -275,7 +264,7 @@ export function destroyAllCharts() {
 /**
  * Main Chart Rendering Orchestrator
  */
-export function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayVal, aqiMode, tStart) {
+function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayVal, aqiMode, tStart) {
   destroyAllCharts();
   containerEl.innerHTML = '';
 
@@ -347,7 +336,7 @@ export function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMod
             beginAtZero: false,
             title: { display: true, text: meta.unit, color: '#94a3b8' },
             ticks: { color: '#94a3b8' },
-            grid: { color: getGridColor(), lineWidth: 0.9 }
+            grid: { color: 'rgba(255,255,255,0.06)', lineWidth: 0.8 }
           }
         }
       }
@@ -404,7 +393,7 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal) {
           beginAtZero: false,
           title: { display: true, text: 'Delta kOhm', color: '#94a3b8' },
           ticks: { color: '#94a3b8' },
-          grid: { color: getGridColor(), lineWidth: 0.9 }
+          grid: { color: 'rgba(255,255,255,0.06)', lineWidth: 0.8 }
         }
       }
     }
@@ -532,7 +521,7 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart)
           beginAtZero: false,
           title: { display: true, text: 'µg/m³', color: '#94a3b8' },
           ticks: { color: '#94a3b8' },
-          grid: { color: getGridColor(), lineWidth: 0.9 }
+          grid: { color: 'rgba(255,255,255,0.06)', lineWidth: 0.8 }
         }
       }
     }
