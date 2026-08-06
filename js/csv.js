@@ -6,7 +6,7 @@
  * Generates and triggers browser download of CSV file according to specs:
  * - Separator: ';'
  * - Decimal separator: ','
- * - Columns: date;time;year;month;temp;hum;pres;voc;PM1;PM2_5;PM2_5_mavg;PM10;PM10_mavg
+ * - Columns: Date/Time;year;month;temp;hum;pres;voc;PM1;PM2_5;PM2_5_mavg;PM10;PM10_mavg
  */
 function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
   if (!rawFeedsStore || !rawFeedsStore.length) {
@@ -75,7 +75,7 @@ function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
   rows.push('');
 
   // Fixed Header Specification
-  const header = ['date', 'time', 'year', 'month', 'temp', 'hum', 'pres', 'voc', 'PM1', 'PM2_5', 'PM2_5_mavg', 'PM10', 'PM10_mavg'];
+  const header = ['Date/Time', 'year', 'month', 'temp', 'hum', 'pres', 'voc', 'PM1', 'PM2_5', 'PM2_5_mavg', 'PM10', 'PM10_mavg'];
   rows.push(header.join(sep));
 
   const formatNum = (v) => {
@@ -92,12 +92,12 @@ function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
 
     const dateFormatted = dateObj.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const timeFormatted = dateObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + ':00';
+    const dateTimeFormatted = `${dateFormatted} ${timeFormatted}`;
     const yearStr = dateObj.getFullYear().toString();
     const monthStr = (dateObj.getMonth() + 1).toString();
 
     const row = [
-      dateFormatted,
-      timeFormatted,
+      dateTimeFormatted,
       yearStr,
       monthStr,
       formatNum(f.field2),         // temp
