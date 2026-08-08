@@ -144,7 +144,21 @@ function updateKPICards(allAvailableFeeds) {
   const lastDate = new Date(lastFeed.created_at);
   document.getElementById('lastUpdate').textContent = `Ultima rilevazione: ${lastDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${lastDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
 
-  // 2. Compute the 24-hour window preceding the last recorded reading
+  // 2. Determine if the active operational session preceding lastDate has accumulated at least 24h of continuous history
+  const parsedFeeds = allAvailableFeeds.map(f => new Date(f.created_at).getTime());
+  let currentSessionStartTs = parsedFeeds.length ? parsedFeeds[0] : lastDate.getTime();
+  
+  for (let i = parsedFeeds.length - 1; i > 0; i--) {
+    if (parsedFeeds[i] - parsedFeeds[i - 1] > 24 * 3600 * 1000) {
+      currentSessionStartTs = parsedFeeds[i];
+      break;
+    }
+  }
+
+  const sessionDurationMs = lastDate.getTime() - currentSessionStartTs;
+  const hasFull24h = sessionDurationMs >= 24 * 60 * 60 * 1000;
+
+  // 3. Compute the 24-hour window preceding the last recorded reading
   const cutoff24h = new Date(lastDate.getTime() - 24 * 60 * 60 * 1000);
   const feeds24h = allAvailableFeeds.filter(f => {
     const d = new Date(f.created_at);
@@ -201,24 +215,41 @@ function updateKPICards(allAvailableFeeds) {
   document.getElementById('pm1Value').textContent = `${fmt0(lastFeed.field5)} µg/m³`;
   document.getElementById('pm1MM').textContent = getMinMaxStr('field5', 'µg/m³');
 
-  // Card 6: PM2.5 (Instantaneous + 24h Moving Average subtext)
-  const avg24PM25 = feedsForAvg.reduce((s, x) => s + Number(x.field6 || 0), 0) / feedsForAvg.length;
+  // Card 6: PM2.5 (Instantaneous + 24h Moving Average subtext if 24h history exists)
   document.getElementById('pm25Value').textContent = `${fmt0(lastFeed.field6)} µg/m³`;
-  document.getElementById('pm25avg').textContent = `media 24h: ${fmt0(avg24PM25)} µg/m³`;
+  if (hasFull24h) {
+    const avg24PM25 = feedsForAvg.reduce((s, x) => s + Number(x.field6 || 0), 0) / feedsForAvg.length;
+    document.getElementById('pm25avg').textContent = `media 24h: ${fmt0(avg24PM25)} µg/m³`;
+  } else {
+    document.getElementById('pm25avg').textContent = `media 24h: in attesa...`;
+  }
 
-  // Card 7: PM10 (Instantaneous + 24h Moving Average subtext)
-  const avg24PM10 = feedsForAvg.reduce((s, x) => s + Number(x.field7 || 0), 0) / feedsForAvg.length;
+  // Card 7: PM10 (Instantaneous + 24h Moving Average subtext if 24h history exists)
   document.getElementById('pm10Value').textContent = `${fmt0(lastFeed.field7)} µg/m³`;
-  document.getElementById('pm10avg').textContent = `media 24h: ${fmt0(avg24PM10)} µg/m³`;
+  if (hasFull24h) {
+    const avg24PM10 = feedsForAvg.reduce((s, x) => s + Number(x.field7 || 0), 0) / feedsForAvg.length;
+    document.getElementById('pm10avg').textContent = `media 24h: ${fmt0(avg24PM10)} µg/m³`;
+  } else {
+    document.getElementById('pm10avg').textContent = `media 24h: in attesa...`;
+  }
 
-  // Card 8: AQI Index
-  const aqiInfo = state.mode === 'EEA' ? computeEEAAQI(avg24PM25, avg24PM10) : computeEPAAQI(avg24PM25, avg24PM10);
+  // Card 8: AQI Index (Requires full 24h history for EEA/EPA compliance)
   document.getElementById('aqiTitle').textContent = `AQI (${state.mode} 24h)`;
-  document.getElementById('aqiVal').textContent = aqiInfo.valueStr;
-  
   const badgeEl = document.getElementById('aqiBadge');
-  badgeEl.textContent = aqiInfo.label;
-  badgeEl.style.backgroundColor = aqiInfo.color;
+
+  if (hasFull24h) {
+    const avg24PM25 = feedsForAvg.reduce((s, x) => s + Number(x.field6 || 0), 0) / feedsForAvg.length;
+    const avg24PM10 = feedsForAvg.reduce((s, x) => s + Number(x.field7 || 0), 0) / feedsForAvg.length;
+    const aqiInfo = state.mode === 'EEA' ? computeEEAAQI(avg24PM25, avg24PM10) : computeEPAAQI(avg24PM25, avg24PM10);
+
+    document.getElementById('aqiVal').textContent = aqiInfo.valueStr;
+    badgeEl.textContent = aqiInfo.label;
+    badgeEl.style.backgroundColor = aqiInfo.color;
+  } else {
+    document.getElementById('aqiVal').textContent = `—`;
+    badgeEl.textContent = `In attesa 24h`;
+    badgeEl.style.backgroundColor = `#64748b`;
+  }
 }
 
 /**
@@ -393,7 +424,7 @@ function initApp() {
         localStorage.setItem('aqi_station_idx', newIdx.toString());
       } catch (err) {}
 
-      state = loadStationPreferences(newIdx);
+      state.charts = loadStationPreferences(newIdx).charts;
       syncControlsUI();
       refreshDashboard();
 
