@@ -454,6 +454,7 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
 
 /**
  * Render COMBO Chart (PM2.5 + PM10 24h Moving Averages + Dynamic Threshold Lines)
+ * Enforces 24h historical data accumulation requirement for newly restarted stations (>24h offline)
  */
 function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart, refEnd) {
   const isLight = isLightTheme();
@@ -475,7 +476,7 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
         <button class="kpi-info-btn" id="comboInfoBtn" style="position:static; margin-left: 0.5rem;">i</button>
       </div>
     </div>
-    <div class="chart-canvas-container" id="comboCanvasContainer">
+    <div class="chart-canvas-container" id="comboCanvasContainer" style="position: relative;">
       <canvas id="chart_canvas_combo"></canvas>
     </div>
   `;
@@ -489,6 +490,29 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
     v25: Number(f.field6),
     v10: Number(f.field7)
   }));
+
+  // Identify current active session start after any gap > 2 hours
+  let currentSessionStartTs = parsed.length ? parsed[0].ts : tStart.getTime();
+  for (let i = parsed.length - 1; i > 0; i--) {
+    if (parsed[i].ts - parsed[i - 1].ts > 2 * 3600 * 1000) {
+      currentSessionStartTs = parsed[i].ts;
+      break;
+    }
+  }
+
+  const latestFeedTs = parsed.length ? parsed[parsed.length - 1].ts : new Date().getTime();
+  const sessionDurationMs = latestFeedTs - currentSessionStartTs;
+  const has24hHistory = sessionDurationMs >= 24 * 60 * 60 * 1000;
+  const availableFromTs = currentSessionStartTs + 24 * 60 * 60 * 1000;
+
+  // Display explicit warning overlay when station restarted < 24 hours ago
+  if (!has24hHistory) {
+    const warning = document.createElement('div');
+    warning.className = 'combo-empty-warning';
+    warning.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 23, 42, 0.9); color: #f59e0b; padding: 1.2rem 1.8rem; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.4); text-align: center; font-size: 0.92rem; font-weight: 500; z-index: 10; pointer-events: none; max-width: 90%; box-shadow: 0 8px 25px rgba(0,0,0,0.5);';
+    warning.textContent = '⚠️ In attesa di 24 ore di dati continui per il calcolo della media mobile (centralina riavviata di recente).';
+    card.querySelector('#comboCanvasContainer').appendChild(warning);
+  }
 
   const pm25RawPoints = [];
   const pm10RawPoints = [];
@@ -512,8 +536,11 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
       win10Start++;
     }
 
-    if (win25Count > 0) pm25RawPoints.push({ x: p.date, y: win25Sum / win25Count });
-    if (win10Count > 0) pm10RawPoints.push({ x: p.date, y: win10Sum / win10Count });
+    // Only generate 24h rolling moving average points once 24h of continuous history exist in current session
+    if (p.ts >= availableFromTs) {
+      if (win25Count > 0) pm25RawPoints.push({ x: p.date, y: win25Sum / win25Count });
+      if (win10Count > 0) pm10RawPoints.push({ x: p.date, y: win10Sum / win10Count });
+    }
   }
 
   const pm25Points = addNullGapsToPoints(pm25RawPoints);
