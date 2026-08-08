@@ -14,6 +14,27 @@ function isLightTheme() {
 }
 
 /**
+ * Inserts null gap points when consecutive data readings are separated by > maxGapMs (default 2 hours)
+ * This prevents Chart.js from drawing diagonal interpolation lines across long periods of station inactivity.
+ */
+function addNullGapsToPoints(rawPoints, maxGapMs = 2 * 3600 * 1000) {
+  if (!rawPoints || rawPoints.length < 2) return rawPoints || [];
+
+  const result = [];
+  for (let i = 0; i < rawPoints.length; i++) {
+    if (i > 0) {
+      const prevTs = new Date(rawPoints[i - 1].x).getTime();
+      const currTs = new Date(rawPoints[i].x).getTime();
+      if (currTs - prevTs > maxGapMs && rawPoints[i - 1].y !== null) {
+        result.push({ x: new Date(prevTs + 60000), y: null });
+      }
+    }
+    result.push(rawPoints[i]);
+  }
+  return result;
+}
+
+/**
  * Custom Hour Grid plugin for drawing background grid lines on time axes
  */
 function registerHourGridPlugin() {
@@ -312,7 +333,8 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
     if (!meta) return;
 
     const fieldKey = `field${chartId}`;
-    const points = aggFn ? aggFn(activeFeeds, fieldKey) : activeFeeds.map(f => ({ x: new Date(f.created_at), y: Number(f[fieldKey]) }));
+    const rawPoints = aggFn ? aggFn(activeFeeds, fieldKey) : activeFeeds.map(f => ({ x: new Date(f.created_at), y: Number(f[fieldKey]) }));
+    const points = addNullGapsToPoints(rawPoints);
 
     const card = document.createElement('div');
     card.className = 'chart-card';
@@ -337,6 +359,7 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
         datasets: [{
           label: meta.title,
           data: points,
+          spanGaps: false,
           tension: 0.3,
           borderWidth: 2,
           pointRadius: 1,
@@ -370,7 +393,8 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
  * Render VOC Delta Chart
  */
 function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
-  const { points } = calculateVOCBaselineAndDelta(feeds, feeds);
+  const { points: rawVocPoints } = calculateVOCBaselineAndDelta(feeds, feeds);
+  const points = addNullGapsToPoints(rawVocPoints.map(p => ({ x: p.x, y: p.yDelta })));
 
   const isLight = isLightTheme();
   const yTickColor = isLight ? '#475569' : '#94a3b8';
@@ -398,7 +422,8 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
     data: {
       datasets: [{
         label: 'VOC Delta',
-        data: points.map(p => ({ x: p.x, y: p.yDelta })),
+        data: points,
+        spanGaps: false,
         tension: 0.3,
         borderWidth: 2,
         pointRadius: 1,
@@ -458,9 +483,6 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
 
   card.querySelector('#comboInfoBtn').onclick = openCOMBOInfoModal;
 
-  const firstFeedTs = feeds.length ? new Date(feeds[0].created_at).getTime() : tStart.getTime();
-  const availableFromTs = firstFeedTs + 24 * 60 * 60 * 1000;
-
   const parsed = feeds.map(f => ({
     ts: new Date(f.created_at).getTime(),
     date: new Date(f.created_at),
@@ -468,8 +490,8 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
     v10: Number(f.field7)
   }));
 
-  const pm25Points = [];
-  const pm10Points = [];
+  const pm25RawPoints = [];
+  const pm10RawPoints = [];
 
   let win25Sum = 0, win25Count = 0, win25Start = 0;
   let win10Sum = 0, win10Count = 0, win10Start = 0;
@@ -490,16 +512,18 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
       win10Start++;
     }
 
-    if (p.ts >= availableFromTs) {
-      if (win25Count > 0) pm25Points.push({ x: p.date, y: win25Sum / win25Count });
-      if (win10Count > 0) pm10Points.push({ x: p.date, y: win10Sum / win10Count });
-    }
+    if (win25Count > 0) pm25RawPoints.push({ x: p.date, y: win25Sum / win25Count });
+    if (win10Count > 0) pm10RawPoints.push({ x: p.date, y: win10Sum / win10Count });
   }
+
+  const pm25Points = addNullGapsToPoints(pm25RawPoints);
+  const pm10Points = addNullGapsToPoints(pm10RawPoints);
 
   const datasets = [
     {
       label: 'PM2.5 (24h)',
       data: pm25Points,
+      spanGaps: false,
       tension: 0.3,
       borderWidth: 2,
       pointRadius: 2,
@@ -509,6 +533,7 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
     {
       label: 'PM10 (24h)',
       data: pm10Points,
+      spanGaps: false,
       tension: 0.3,
       borderWidth: 2,
       pointRadius: 2,
