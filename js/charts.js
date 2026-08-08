@@ -14,10 +14,10 @@ function isLightTheme() {
 }
 
 /**
- * Inserts null gap points when consecutive data readings are separated by > maxGapMs (default 2 hours)
- * This prevents Chart.js from drawing diagonal interpolation lines across long periods of station inactivity.
+ * Inserts null gap points when consecutive data readings are separated by > maxGapMs (default 24 hours)
+ * This breaks line charts ONLY when station inactivity exceeds 24 hours.
  */
-function addNullGapsToPoints(rawPoints, maxGapMs = 2 * 3600 * 1000) {
+function addNullGapsToPoints(rawPoints, maxGapMs = 24 * 3600 * 1000) {
   if (!rawPoints || rawPoints.length < 2) return rawPoints || [];
 
   const result = [];
@@ -491,10 +491,10 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
     v10: Number(f.field7)
   }));
 
-  // Identify current active session start after any gap > 2 hours
+  // Identify current active session start after any gap > 24 hours
   let currentSessionStartTs = parsed.length ? parsed[0].ts : tStart.getTime();
   for (let i = parsed.length - 1; i > 0; i--) {
-    if (parsed[i].ts - parsed[i - 1].ts > 2 * 3600 * 1000) {
+    if (parsed[i].ts - parsed[i - 1].ts > 24 * 3600 * 1000) {
       currentSessionStartTs = parsed[i].ts;
       break;
     }
