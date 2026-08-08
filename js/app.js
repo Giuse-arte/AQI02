@@ -215,21 +215,23 @@ function updateKPICards(allAvailableFeeds) {
   document.getElementById('pm1Value').textContent = `${fmt0(lastFeed.field5)} µg/m³`;
   document.getElementById('pm1MM').textContent = getMinMaxStr('field5', 'µg/m³');
 
-  // Card 6: PM2.5 (Instantaneous + 24h Moving Average subtext if 24h history exists)
-  document.getElementById('pm25Value').textContent = `${fmt0(lastFeed.field6)} µg/m³`;
+  // Card 6: PM2.5 (Requires 24h continuous history)
   if (hasFull24h) {
     const avg24PM25 = feedsForAvg.reduce((s, x) => s + Number(x.field6 || 0), 0) / feedsForAvg.length;
+    document.getElementById('pm25Value').textContent = `${fmt0(lastFeed.field6)} µg/m³`;
     document.getElementById('pm25avg').textContent = `media 24h: ${fmt0(avg24PM25)} µg/m³`;
   } else {
+    document.getElementById('pm25Value').textContent = `—`;
     document.getElementById('pm25avg').textContent = `media 24h: in attesa...`;
   }
 
-  // Card 7: PM10 (Instantaneous + 24h Moving Average subtext if 24h history exists)
-  document.getElementById('pm10Value').textContent = `${fmt0(lastFeed.field7)} µg/m³`;
+  // Card 7: PM10 (Requires 24h continuous history)
   if (hasFull24h) {
     const avg24PM10 = feedsForAvg.reduce((s, x) => s + Number(x.field7 || 0), 0) / feedsForAvg.length;
+    document.getElementById('pm10Value').textContent = `${fmt0(lastFeed.field7)} µg/m³`;
     document.getElementById('pm10avg').textContent = `media 24h: ${fmt0(avg24PM10)} µg/m³`;
   } else {
+    document.getElementById('pm10Value').textContent = `—`;
     document.getElementById('pm10avg').textContent = `media 24h: in attesa...`;
   }
 
