@@ -55,35 +55,64 @@ function openAQIInfoModal(activeMode = 'EEA') {
 
     if (isEEA) {
       tabContent.innerHTML = `
-        <p style="color: var(--text-muted); margin-bottom: 0.8rem;">
-          L'<strong>Agenzia Europea dell'Ambiente (EEA)</strong> definisce l'Indice di Qualità dell'Aria basandosi sulla concentrazione peggiore tra PM2.5 e PM10 nelle ultime 24 ore. L'indice non restituisce un valore numerico ma 5 classi di qualità.
+        <p style="color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; font-size: 0.9rem;">
+          L'Indice Europeo della Qualità dell'Aria (European Air Quality Index) dell'EEA misura le concentrazioni orarie (o medie calcolate su 24 ore) di PM2,5 e PM10 basandosi su 6 fasce di qualità. Definisce l'Indice di Qualità dell'Aria basandosi sulla concentrazione peggiore tra PM2.5 e PM10 nelle ultime 24 ore.
         </p>
-        <img src="${imgSrc}" class="infographic-img" alt="Limiti EEA" onerror="this.style.display='none'">
-        
+
         <table class="threshold-table">
           <thead>
             <tr>
-              <th>Classe</th>
-              <th>PM2.5 (24h)</th>
-              <th>PM10 (24h)</th>
-              <th>Qualità Aria</th>
+              <th>Categoria EEA</th>
+              <th>Colore associato</th>
+              <th>Concentrazione PM2,5 (µg/m³)</th>
+              <th>Concentrazione PM10 (µg/m³)</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td><span style="color:#16a34a; font-weight:700;">Livello 1</span></td><td>0 – 10 µg/m³</td><td>0 – 20 µg/m³</td><td><strong style="color:#16a34a;">Buona</strong></td></tr>
-            <tr><td><span style="color:#65a30d; font-weight:700;">Livello 2</span></td><td>10.1 – 20 µg/m³</td><td>20.1 – 40 µg/m³</td><td><strong style="color:#65a30d;">Discreta</strong></td></tr>
-            <tr><td><span style="color:#eab308; font-weight:700;">Livello 3</span></td><td>20.1 – 25 µg/m³</td><td>40.1 – 50 µg/m³</td><td><strong style="color:#eab308;">Moderata</strong></td></tr>
-            <tr><td><span style="color:#f97316; font-weight:700;">Livello 4</span></td><td>25.1 – 50 µg/m³</td><td>50.1 – 100 µg/m³</td><td><strong style="color:#f97316;">Scarsa</strong></td></tr>
-            <tr><td><span style="color:#dc2626; font-weight:700;">Livello 5</span></td><td>&gt; 50 µg/m³</td><td>&gt; 100 µg/m³</td><td><strong style="color:#dc2626;">Molto scarsa</strong></td></tr>
+            <tr>
+              <td>Buona (Good)</td>
+              <td><span style="color:#38bdf8; font-weight:700;">Azzurro</span></td>
+              <td>0 – 10</td>
+              <td>0 – 20</td>
+            </tr>
+            <tr>
+              <td>Accettabile (Fair)</td>
+              <td><span style="color:#22c55e; font-weight:700;">Verde</span></td>
+              <td>10 – 20</td>
+              <td>20 – 40</td>
+            </tr>
+            <tr>
+              <td>Moderata (Moderate)</td>
+              <td><span style="color:#eab308; font-weight:700;">Giallo</span></td>
+              <td>20 – 25</td>
+              <td>40 – 50</td>
+            </tr>
+            <tr>
+              <td>Scadente (Poor)</td>
+              <td><span style="color:#ef4444; font-weight:700;">Rosso</span></td>
+              <td>25 – 50</td>
+              <td>50 – 100</td>
+            </tr>
+            <tr>
+              <td>Molto scadente (Very poor)</td>
+              <td><span style="color:#991b1b; font-weight:700;">Rosso Scuro</span></td>
+              <td>50 – 75</td>
+              <td>100 – 150</td>
+            </tr>
+            <tr>
+              <td>Estremamente scadente (Extremely poor)</td>
+              <td><span style="color:#a855f7; font-weight:700;">Viola Scuro</span></td>
+              <td>&gt; 75</td>
+              <td>&gt; 150</td>
+            </tr>
           </tbody>
         </table>
       `;
     } else {
       tabContent.innerHTML = `
-        <p style="color: var(--text-muted); margin-bottom: 0.8rem;">
+        <p style="color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; font-size: 0.9rem;">
           L'<strong>US EPA (Environmental Protection Agency)</strong> calcola un indice numerico da 0 a 500 tramite interpolazione lineare sui breakpoint ufficiali di PM2.5 e PM10. Il valore peggiore determina l'AQI finale.
         </p>
-        <img src="${imgSrc}" class="infographic-img" alt="Limiti EPA" onerror="this.style.display='none'">
 
         <table class="threshold-table">
           <thead>
@@ -95,12 +124,42 @@ function openAQIInfoModal(activeMode = 'EEA') {
             </tr>
           </thead>
           <tbody>
-            <tr><td>0 – 50</td><td>0 – 12.0 µg/m³</td><td>0 – 54 µg/m³</td><td><strong style="color:#16a34a;">Buona</strong></td></tr>
-            <tr><td>51 – 100</td><td>12.1 – 35.4 µg/m³</td><td>55 – 154 µg/m³</td><td><strong style="color:#f59e0b;">Moderata</strong></td></tr>
-            <tr><td>101 – 150</td><td>35.5 – 55.4 µg/m³</td><td>155 – 254 µg/m³</td><td><strong style="color:#f97316;">Sensibile</strong></td></tr>
-            <tr><td>151 – 200</td><td>55.5 – 150.4 µg/m³</td><td>255 – 354 µg/m³</td><td><strong style="color:#dc2626;">Non salubre</strong></td></tr>
-            <tr><td>201 – 300</td><td>150.5 – 250.4 µg/m³</td><td>355 – 424 µg/m³</td><td><strong style="color:#7c2d12;">Molto non salubre</strong></td></tr>
-            <tr><td>301 – 500</td><td>250.5 – 500.4 µg/m³</td><td>425 – 604 µg/m³</td><td><strong style="color:#4c0519;">Pericolosa</strong></td></tr>
+            <tr>
+              <td>0 – 50</td>
+              <td>0 – 9.0 µg/m³</td>
+              <td>0 – 54 µg/m³</td>
+              <td><strong style="color:#22c55e;">Buona</strong></td>
+            </tr>
+            <tr>
+              <td>51 – 100</td>
+              <td>9.1 – 35.4 µg/m³</td>
+              <td>55 – 154 µg/m³</td>
+              <td><strong style="color:#eab308;">Moderata</strong></td>
+            </tr>
+            <tr>
+              <td>101 – 150</td>
+              <td>35.5 – 55.4 µg/m³</td>
+              <td>155 – 254 µg/m³</td>
+              <td><strong style="color:#f97316;">Sensibile</strong></td>
+            </tr>
+            <tr>
+              <td>151 – 200</td>
+              <td>55.5 – 150.4 µg/m³</td>
+              <td>255 – 354 µg/m³</td>
+              <td><strong style="color:#ef4444;">Non salubre</strong></td>
+            </tr>
+            <tr>
+              <td>201 – 300</td>
+              <td>150.5 – 250.4 µg/m³</td>
+              <td>355 – 424 µg/m³</td>
+              <td><strong style="color:#991b1b;">Molto non salubre</strong></td>
+            </tr>
+            <tr>
+              <td>301 – 500</td>
+              <td>250.5 – 500.4 µg/m³</td>
+              <td>425 – 604 µg/m³</td>
+              <td><strong style="color:#a855f7;">Pericolosa</strong></td>
+            </tr>
           </tbody>
         </table>
       `;
