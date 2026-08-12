@@ -217,6 +217,67 @@ function openCOMBOInfoModal() {
 }
 
 /**
+ * Opens PM2.5 & PM10 Single Charts Limits Info Modal
+ */
+function openPMLimitsInfoModal() {
+  closeModal();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = closeModal;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-container';
+  modal.style.maxWidth = '780px';
+
+  modal.innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">Limiti e Soglie Giornaliere PM2.5 e PM10</div>
+      <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; font-size: 0.9rem;">
+        I limiti giornalieri (calcolati sulle 24 ore) per le polveri sottili PM10 e PM2,5 variano in modo significativo a seconda che si considerino i limiti di legge attuali (D.Lgs. 155/2010), i nuovi obiettivi europei al 2030, o le soglie di protezione della salute raccomandate dall'Organizzazione Mondiale della Sanità (OMS).
+      </p>
+
+      <table class="threshold-table" style="margin-bottom: 1rem;">
+        <thead>
+          <tr>
+            <th>Inquinante</th>
+            <th>Normativa Italiana / UE Attuale</th>
+            <th>Nuova Direttiva UE (Obiettivo 2030)</th>
+            <th>Linee Guida OMS (Raccomandazioni)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>PM10</strong></td>
+            <td>50 µg/m³ <br><small style="color:var(--text-muted);">(max 35 superamenti/anno)</small></td>
+            <td>45 µg/m³ <br><small style="color:var(--text-muted);">(max 18 superamenti/anno)</small></td>
+            <td>45 µg/m³ <br><small style="color:var(--text-muted);">(non da superare più di 3-4 giorni/anno)</small></td>
+          </tr>
+          <tr>
+            <td><strong>PM2,5</strong></td>
+            <td>Nessun limite giornaliero previsto*</td>
+            <td>25 µg/m³ <br><small style="color:var(--text-muted);">(max 18 superamenti/anno)</small></td>
+            <td>15 µg/m³ <br><small style="color:var(--text-muted);">(non da superare più di 3-4 giorni/anno)</small></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="font-size: 0.82rem; color: var(--text-muted); font-style: italic; line-height: 1.4;">
+        *La normativa europea/italiana attuale (D.Lgs. 155/2010) fissa per il PM2,5 unicamente un limite medio annuale (20 µg/m³), senza prevedere una soglia specifica di blocco o sforamento sulle 24 ore.
+      </p>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+
+  document.getElementById('modalCloseBtn').onclick = closeModal;
+}
+
+/**
  * Custom Dark Glass Confirmation Modal for "Data Inizio" field changes
  */
 function showResetConfirmationModal(fieldName, newValue, onConfirm, onCancel) {

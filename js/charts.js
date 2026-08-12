@@ -397,6 +397,9 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
       });
     }
 
+    const isPMChart = chartId === '6' || chartId === '7';
+    const infoBtnHtml = isPMChart ? `<button class="kpi-info-btn" id="pmInfoBtn_${chartId}" style="position:static; margin-left: 0.5rem;" title="Info Limiti e Soglie PM">i</button>` : '';
+
     const card = document.createElement('div');
     card.className = 'chart-card';
     card.id = `card_${chartId}`;
@@ -406,12 +409,18 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
           <span class="chart-card-title">${meta.title}</span>
           <span class="chart-card-sensor">${meta.sensor}</span>
         </div>
+        ${isPMChart ? `<div class="chart-legend">${infoBtnHtml}</div>` : ''}
       </div>
       <div class="chart-canvas-container">
         <canvas id="chart_canvas_${chartId}"></canvas>
       </div>
     `;
     containerEl.appendChild(card);
+
+    if (isPMChart) {
+      const pmBtn = card.querySelector(`#pmInfoBtn_${chartId}`);
+      if (pmBtn) pmBtn.onclick = openPMLimitsInfoModal;
+    }
 
     const ctx = card.querySelector('canvas').getContext('2d');
     chartInstances[chartId] = new Chart(ctx, {
