@@ -130,8 +130,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: #38bdf8;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #ffffff;
   color: #0f172a;
   font-size: 0.92rem;
   font-weight: 800;
@@ -144,20 +144,24 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-body[data-theme="light"] .kpi-info-btn {
-  background: #0f172a;
-  color: #38bdf8;
-  border-color: rgba(0, 0, 0, 0.15);
+.kpi-info-btn:hover {
+  background: #38bdf8;
+  color: #0f172a;
+  border-color: #38bdf8;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.5);
 }
 
-.kpi-info-btn:hover {
-  transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+body[data-theme="light"] .kpi-info-btn {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 body[data-theme="light"] .kpi-info-btn:hover {
   background: #0284c7;
   color: #ffffff;
+  border-color: #0284c7;
 }
 
 /* AQI Category Badge */
