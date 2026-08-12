@@ -25,7 +25,7 @@ function openAQIInfoModal(activeMode = 'EEA') {
   modal.innerHTML = `
     <div class="modal-header">
       <div class="modal-title">
-        <span>Soglie e Standard AQI — ${activeMode}</span>
+        <span>Soglie e Standard AQI</span>
       </div>
       <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
     </div>

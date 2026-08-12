@@ -158,6 +158,69 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+/* Light Theme Modals & Threshold Tables */
+body[data-theme="light"] .modal-container {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3), 0 0 30px rgba(2, 132, 199, 0.15);
+}
+
+body[data-theme="light"] .modal-header {
+  background: #f1f5f9;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body[data-theme="light"] .modal-title {
+  color: #0f172a;
+}
+
+body[data-theme="light"] .modal-body {
+  color: #1e293b;
+}
+
+body[data-theme="light"] .modal-body p {
+  color: #475569 !important;
+}
+
+body[data-theme="light"] .threshold-table {
+  color: #0f172a;
+}
+
+body[data-theme="light"] .threshold-table th {
+  background: #e2e8f0;
+  color: #334155;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+body[data-theme="light"] .threshold-table td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  color: #0f172a;
+}
+
+body[data-theme="light"] .threshold-table tr:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body[data-theme="light"] .modal-tabs {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body[data-theme="light"] .modal-tab-btn {
+  color: #64748b;
+}
+
+body[data-theme="light"] .modal-tab-btn.active {
+  background: rgba(2, 132, 199, 0.12);
+  color: #0284c7;
+  border-color: rgba(2, 132, 199, 0.3);
+}
+
+body[data-theme="light"] .modal-close-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #475569;
+}
+
 /* Confirmation Modal Specifics */
 .confirm-dialog-content {
   display: flex;
