@@ -461,13 +461,18 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
   const yTickColor = isLight ? '#475569' : '#94a3b8';
   const yGridColor = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.06)';
 
+  const isYearMode = viewMode === 'year';
+  const comboTitleText = isYearMode
+    ? `PM10 / PM2.5 media annuale — Standard ${aqiMode} (Limiti Annuali)`
+    : `PM10 / PM2.5 media mobile 24h — Standard ${aqiMode}`;
+
   const card = document.createElement('div');
   card.className = 'chart-card';
   card.id = 'card_combo';
   card.innerHTML = `
     <div class="chart-card-header">
       <div class="chart-title-group">
-        <span class="chart-card-title">PM10 / PM2.5 media mobile 24h — Standard ${aqiMode}</span>
+        <span class="chart-card-title">${comboTitleText}</span>
         <span class="chart-card-sensor">PMS5003</span>
       </div>
       <div class="chart-legend">
@@ -548,7 +553,7 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
 
   const datasets = [
     {
-      label: 'PM2.5 (24h)',
+      label: isYearMode ? 'PM2.5 (Media Giorno)' : 'PM2.5 (24h)',
       data: pm25Points,
       spanGaps: false,
       tension: 0.3,
@@ -558,7 +563,7 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
       backgroundColor: '#ec4899'
     },
     {
-      label: 'PM10 (24h)',
+      label: isYearMode ? 'PM10 (Media Giorno)' : 'PM10 (24h)',
       data: pm10Points,
       spanGaps: false,
       tension: 0.3,
@@ -569,19 +574,37 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
     }
   ];
 
-  // Dynamic Dotted Threshold Lines
+  // Dynamic Dotted Threshold Lines (Annual Limits in Year Mode, Daily Limits in other modes)
   const sampleTimePoints = pm25Points.length ? pm25Points.map(p => p.x) : [new Date()];
 
   if (aqiMode === 'EEA') {
-    datasets.push(
-      { label: 'Limite EEA PM2.5 (25)', data: sampleTimePoints.map(x => ({ x, y: 25 })), borderDash: [6, 4], borderColor: '#eab308', borderWidth: 1.5, pointRadius: 0 },
-      { label: 'Limite EEA PM10 (50)', data: sampleTimePoints.map(x => ({ x, y: 50 })), borderDash: [6, 4], borderColor: '#f97316', borderWidth: 1.5, pointRadius: 0 }
-    );
+    if (isYearMode) {
+      // Annual EEA Limits (20 µg/m³ for PM2.5, 40 µg/m³ for PM10)
+      datasets.push(
+        { label: 'Limite Annuale EEA PM2.5 (20)', data: sampleTimePoints.map(x => ({ x, y: 20 })), borderDash: [6, 4], borderColor: '#eab308', borderWidth: 1.5, pointRadius: 0 },
+        { label: 'Limite Annuale EEA PM10 (40)', data: sampleTimePoints.map(x => ({ x, y: 40 })), borderDash: [6, 4], borderColor: '#f97316', borderWidth: 1.5, pointRadius: 0 }
+      );
+    } else {
+      // Daily EEA Limits (25 µg/m³ for PM2.5, 50 µg/m³ for PM10)
+      datasets.push(
+        { label: 'Limite Giornaliero EEA PM2.5 (25)', data: sampleTimePoints.map(x => ({ x, y: 25 })), borderDash: [6, 4], borderColor: '#eab308', borderWidth: 1.5, pointRadius: 0 },
+        { label: 'Limite Giornaliero EEA PM10 (50)', data: sampleTimePoints.map(x => ({ x, y: 50 })), borderDash: [6, 4], borderColor: '#f97316', borderWidth: 1.5, pointRadius: 0 }
+      );
+    }
   } else {
-    datasets.push(
-      { label: 'Limite EPA PM2.5 (35)', data: sampleTimePoints.map(x => ({ x, y: 35 })), borderDash: [6, 4], borderColor: '#ef4444', borderWidth: 1.5, pointRadius: 0 },
-      { label: 'Limite EPA PM10 (150)', data: sampleTimePoints.map(x => ({ x, y: 150 })), borderDash: [6, 4], borderColor: '#7f1d1d', borderWidth: 1.5, pointRadius: 0 }
-    );
+    if (isYearMode) {
+      // Annual EPA Limits (15 µg/m³ for PM2.5, 50 µg/m³ for PM10)
+      datasets.push(
+        { label: 'Limite Annuale EPA PM2.5 (15)', data: sampleTimePoints.map(x => ({ x, y: 15 })), borderDash: [6, 4], borderColor: '#ef4444', borderWidth: 1.5, pointRadius: 0 },
+        { label: 'Limite Annuale EPA PM10 (50)', data: sampleTimePoints.map(x => ({ x, y: 50 })), borderDash: [6, 4], borderColor: '#7f1d1d', borderWidth: 1.5, pointRadius: 0 }
+      );
+    } else {
+      // Daily EPA Limits (35 µg/m³ for PM2.5, 150 µg/m³ for PM10)
+      datasets.push(
+        { label: 'Limite Giornaliero EPA PM2.5 (35)', data: sampleTimePoints.map(x => ({ x, y: 35 })), borderDash: [6, 4], borderColor: '#ef4444', borderWidth: 1.5, pointRadius: 0 },
+        { label: 'Limite Giornaliero EPA PM10 (150)', data: sampleTimePoints.map(x => ({ x, y: 150 })), borderDash: [6, 4], borderColor: '#7f1d1d', borderWidth: 1.5, pointRadius: 0 }
+      );
+    }
   }
 
   const ctx = card.querySelector('canvas').getContext('2d');

@@ -134,19 +134,19 @@ function openCOMBOInfoModal() {
     </div>
     <div class="modal-body">
       <p style="color: var(--text-muted); margin-bottom: 1rem;">
-        La normativa Italiana/Europea (EEA) e quella Statunitense (EPA) stabiliscono limiti di concentrazione giornaliera per prevenire rischi alla salute.
+        La normativa Italiana/Europea (EEA) e quella Statunitense (EPA) stabiliscono sia <strong>limiti giornalieri (24h)</strong> per prevenire picchi acuti, sia <strong>limiti annuali (365 giorni)</strong> per tutelare la salute nel lungo termine.
       </p>
 
       <div style="background: rgba(30,41,59,0.5); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 1rem;">
         <h4 style="color: var(--primary); margin-bottom: 0.4rem;">Standard EEA (Europa)</h4>
-        <p><span style="color:#f97316; font-weight:700;">Linea Arancione:</span> 50 µg/m³ (Limite giornaliero PM10)</p>
-        <p><span style="color:#eab308; font-weight:700;">Linea Gialla:</span> 25 µg/m³ (Limite giornaliero PM2.5)</p>
+        <p><span style="color:#f97316; font-weight:700;">Linea Arancione:</span> 50 µg/m³ (Limite giornaliero PM10) | 40 µg/m³ (Limite annuale PM10)</p>
+        <p><span style="color:#eab308; font-weight:700;">Linea Gialla:</span> 25 µg/m³ (Limite giornaliero PM2.5) | 20 µg/m³ (Limite annuale PM2.5)</p>
       </div>
 
       <div style="background: rgba(30,41,59,0.5); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08);">
         <h4 style="color: var(--accent-purple); margin-bottom: 0.4rem;">Standard EPA (USA)</h4>
-        <p><span style="color:#7f1d1d; font-weight:700;">Linea Rosso Scuro:</span> 150 µg/m³ (Limite giornaliero PM10)</p>
-        <p><span style="color:#ef4444; font-weight:700;">Linea Rossa:</span> 35 µg/m³ (Limite giornaliero PM2.5)</p>
+        <p><span style="color:#7f1d1d; font-weight:700;">Linea Rosso Scuro:</span> 150 µg/m³ (Limite giornaliero PM10) | 50 µg/m³ (Limite annuale PM10)</p>
+        <p><span style="color:#ef4444; font-weight:700;">Linea Rossa:</span> 35 µg/m³ (Limite giornaliero PM2.5) | 15 µg/m³ (Limite annuale PM2.5)</p>
       </div>
     </div>
   `;
