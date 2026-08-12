@@ -20,12 +20,26 @@ body.layout-column .charts-grid {
 }
 
 body.layout-column .kpi-grid {
-  grid-template-columns: repeat(2, 1fr) !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0.4rem !important;
 }
 
 @media (max-width: 600px) {
   body.layout-column .kpi-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0.3rem !important;
+  }
+
+  body.layout-column .kpi-card {
+    padding: 0.5rem 0.3rem !important;
+  }
+
+  body.layout-column .kpi-value {
+    font-size: 1.05rem !important;
+  }
+
+  body.layout-column .kpi-subtext {
+    font-size: 0.65rem !important;
   }
 }
 

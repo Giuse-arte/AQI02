@@ -137,6 +137,8 @@ header.dashboard-header {
   border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
   box-shadow: var(--glass-shadow);
+  align-self: flex-end;
+  margin-top: auto;
 }
 
 .control-group {
@@ -270,6 +272,20 @@ header.dashboard-header {
   background: linear-gradient(135deg, #475569 0%, #334155 100%);
   box-shadow: 0 6px 16px rgba(71, 85, 105, 0.5);
   transform: translateY(-1px);
+}
+
+.btn-icon-only {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  justify-content: center;
+  align-items: center;
+  border-radius: var(--radius-sm);
+}
+
+.btn-icon-only svg {
+  display: block;
+  margin: 0 auto;
 }
 
 /* Dropdown Menu Panel */

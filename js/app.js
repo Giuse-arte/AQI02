@@ -396,21 +396,20 @@ function initApp() {
 
   // Layout Toggle (PC Grid / Mobile Single Column)
   const layoutToggleBtn = document.getElementById('layoutToggleBtn');
-  const layoutToggleText = document.getElementById('layoutToggleText');
   const iconGrid = layoutToggleBtn ? layoutToggleBtn.querySelector('.layout-icon-grid') : null;
   const iconColumn = layoutToggleBtn ? layoutToggleBtn.querySelector('.layout-icon-column') : null;
 
   function applyLayoutMode(mode) {
     if (mode === 'column') {
       document.body.classList.add('layout-column');
-      if (layoutToggleText) layoutToggleText.textContent = 'Disposizione Cellulare';
-      if (iconGrid) iconGrid.style.display = 'none';
-      if (iconColumn) iconColumn.style.display = 'inline-block';
-    } else {
-      document.body.classList.remove('layout-column');
-      if (layoutToggleText) layoutToggleText.textContent = 'Disposizione PC';
       if (iconGrid) iconGrid.style.display = 'inline-block';
       if (iconColumn) iconColumn.style.display = 'none';
+      if (layoutToggleBtn) layoutToggleBtn.setAttribute('title', 'Vista Cellulare attiva (Clicca per vista PC)');
+    } else {
+      document.body.classList.remove('layout-column');
+      if (iconGrid) iconGrid.style.display = 'none';
+      if (iconColumn) iconColumn.style.display = 'inline-block';
+      if (layoutToggleBtn) layoutToggleBtn.setAttribute('title', 'Vista PC attiva (Clicca per vista Cellulare)');
     }
     try {
       localStorage.setItem('aqi_layout_mode', mode);
