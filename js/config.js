@@ -56,8 +56,8 @@ const CHART_META = {
   3: { title: 'Pressione', sensor: 'BME680', unit: 'hPa', min: 900, max: 1100, color: '#c084fc' },
   4: { title: 'VOC — Delta rispetto baseline 24h', sensor: 'BME680', unit: 'Delta kOhm', min: 0, max: 500, color: '#3b82f6' },
   5: { title: 'PM1', sensor: 'PMS5003', unit: 'µg/m³', min: 0, max: 100, color: '#a855f7' },
-  6: { title: 'PM2.5 (24h)', sensor: 'PMS5003', unit: 'µg/m³', min: 0, max: 100, color: '#ec4899' },
-  7: { title: 'PM10 (24h)', sensor: 'PMS5003', unit: 'µg/m³', min: 0, max: 100, color: '#10b981' }
+  6: { title: 'PM2.5', sensor: 'PMS5003', unit: 'µg/m³', min: 0, max: 100, color: '#ec4899' },
+  7: { title: 'PM10', sensor: 'PMS5003', unit: 'µg/m³', min: 0, max: 100, color: '#10b981' }
 };
 
 // Default Factory Visualization Preferences
