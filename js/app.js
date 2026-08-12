@@ -394,6 +394,44 @@ function initApp() {
     });
   }
 
+  // Layout Toggle (PC Grid / Mobile Single Column)
+  const layoutToggleBtn = document.getElementById('layoutToggleBtn');
+  const layoutToggleText = document.getElementById('layoutToggleText');
+  const iconGrid = layoutToggleBtn ? layoutToggleBtn.querySelector('.layout-icon-grid') : null;
+  const iconColumn = layoutToggleBtn ? layoutToggleBtn.querySelector('.layout-icon-column') : null;
+
+  function applyLayoutMode(mode) {
+    if (mode === 'column') {
+      document.body.classList.add('layout-column');
+      if (layoutToggleText) layoutToggleText.textContent = 'Disposizione Cellulare';
+      if (iconGrid) iconGrid.style.display = 'none';
+      if (iconColumn) iconColumn.style.display = 'inline-block';
+    } else {
+      document.body.classList.remove('layout-column');
+      if (layoutToggleText) layoutToggleText.textContent = 'Disposizione PC';
+      if (iconGrid) iconGrid.style.display = 'inline-block';
+      if (iconColumn) iconColumn.style.display = 'none';
+    }
+    try {
+      localStorage.setItem('aqi_layout_mode', mode);
+    } catch (e) {}
+
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+  }
+
+  let savedLayout = 'grid';
+  try {
+    savedLayout = localStorage.getItem('aqi_layout_mode') || 'grid';
+  } catch (e) {}
+  applyLayoutMode(savedLayout);
+
+  if (layoutToggleBtn) {
+    layoutToggleBtn.addEventListener('click', () => {
+      const isColumn = document.body.classList.contains('layout-column');
+      applyLayoutMode(isColumn ? 'grid' : 'column');
+    });
+  }
+
   const stationSelect = document.getElementById('stationSelect');
   if (stationSelect) {
     stationSelect.innerHTML = '';
