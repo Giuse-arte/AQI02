@@ -278,6 +278,66 @@ function openPMLimitsInfoModal() {
 }
 
 /**
+ * Opens PM2.5 & PM10 Annual Limits Info Modal (used when viewMode === 'year')
+ */
+function openPMAnnualLimitsInfoModal() {
+  closeModal();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = closeModal;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-container';
+  modal.style.maxWidth = '780px';
+
+  modal.innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">Limiti e Soglie Annuali PM2.5 e PM10</div>
+      <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.5; font-size: 0.9rem;">
+        La Normativa Italiana /Europea e quella dell’Organizzazione Mondiale della sanità (OMS) stabiliscono dei limiti annuali per indicare le soglie di pericolosità all’esposizione per gli esseri umani per PM10 e PM2,5. Non viene normato il PM1.
+      </p>
+      <p style="color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5; font-size: 0.9rem;">
+        I dati da noi rilevati e di seguito riportati non sono certificati, ma permettono di misurare in modo sufficientemente preciso la variabilità rispetto ad uno standard al variare del tempo in luoghi predefiniti.
+      </p>
+
+      <table class="threshold-table" style="margin-bottom: 1rem;">
+        <thead>
+          <tr>
+            <th>Inquinante</th>
+            <th>Normativa Italiana / UE Attuale (D.Lgs. 155/2010)</th>
+            <th>Nuova Direttiva UE (Obiettivo 2030)</th>
+            <th>Linee Guida OMS (Raccomandazioni 2021)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>PM10</strong> <br><small style="color:#f97316; font-weight:600;">(Linea arancione/rossa)</small></td>
+            <td><strong>40 µg/m³</strong></td>
+            <td><strong>20 µg/m³</strong></td>
+            <td><strong>15 µg/m³</strong></td>
+          </tr>
+          <tr>
+            <td><strong>PM2,5</strong> <br><small style="color:#eab308; font-weight:600;">(Linea gialla)</small></td>
+            <td><strong>20 µg/m³</strong></td>
+            <td><strong>10 µg/m³</strong></td>
+            <td><strong>5 µg/m³</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+
+  document.getElementById('modalCloseBtn').onclick = closeModal;
+}
+
+/**
  * Custom Dark Glass Confirmation Modal for "Data Inizio" field changes
  */
 function showResetConfirmationModal(fieldName, newValue, onConfirm, onCancel) {

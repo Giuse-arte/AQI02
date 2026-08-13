@@ -419,7 +419,15 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
 
     if (isPMChart) {
       const pmBtn = card.querySelector(`#pmInfoBtn_${chartId}`);
-      if (pmBtn) pmBtn.onclick = openPMLimitsInfoModal;
+      if (pmBtn) {
+        pmBtn.onclick = () => {
+          if (viewMode === 'year') {
+            openPMAnnualLimitsInfoModal();
+          } else {
+            openPMLimitsInfoModal();
+          }
+        };
+      }
     }
 
     const ctx = card.querySelector('canvas').getContext('2d');
@@ -545,7 +553,13 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
   `;
   containerEl.appendChild(card);
 
-  card.querySelector('#comboInfoBtn').onclick = openCOMBOInfoModal;
+  card.querySelector('#comboInfoBtn').onclick = () => {
+    if (viewMode === 'year') {
+      openPMAnnualLimitsInfoModal();
+    } else {
+      openCOMBOInfoModal();
+    }
+  };
 
   const parsed = feeds.map(f => ({
     ts: new Date(f.created_at).getTime(),
