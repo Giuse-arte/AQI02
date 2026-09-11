@@ -162,13 +162,96 @@ function updateKPICards(allAvailableFeeds) {
   const hasFull24h = sessionDurationMs >= 24 * 60 * 60 * 1000;
 
   // 3. Compute the 24-hour window preceding the last recorded reading
-  const cutoff24h = new Date(lastDate.getTime() - 24 * 60 * 60 * 1000);
-  const feeds24h = allAvailableFeeds.filter(f => {
-    const d = new Date(f.created_at);
-    return d >= cutoff24h && d <= lastDate;
-  });
+// Costruiamo i punti della media mobile 24h, usando la stessa logica
+// del grafico. Il primo punto valido è quello corrispondente alle 24h
+// dall'inizio della sessione.
+//
+// Il Min/Max delle cards viene calcolato sugli ultimi 24 punti della
+// media mobile disponibili. Se i punti disponibili sono meno di 24,
+// vengono utilizzati tutti quelli presenti.
 
-  const feedsForAvg = feeds24h.length ? feeds24h : allAvailableFeeds;
+const movingAvgPoints = {
+  pm25: [],
+  pm10: []
+};
+
+let win25Sum = 0;
+let win25Count = 0;
+let win10Sum = 0;
+let win10Count = 0;
+let win25Start = 0;
+let win10Start = 0;
+
+for (let i = 0; i < allAvailableFeeds.length; i++) {
+  const feed = allAvailableFeeds[i];
+  const ts = new Date(feed.created_at).getTime();
+  const cutoff = ts - 24 * 60 * 60 * 1000;
+
+  const v25 = Number(feed.field6);
+  const v10 = Number(feed.field7);
+
+  if (!isNaN(v25)) {
+    win25Sum += v25;
+    win25Count++;
+  }
+
+  if (!isNaN(v10)) {
+    win10Sum += v10;
+    win10Count++;
+  }
+
+  while (
+    win25Start < i &&
+    new Date(allAvailableFeeds[win25Start].created_at).getTime() <= cutoff
+  ) {
+    const oldValue = Number(allAvailableFeeds[win25Start].field6);
+
+    if (!isNaN(oldValue)) {
+      win25Sum -= oldValue;
+      win25Count--;
+    }
+
+    win25Start++;
+  }
+
+  while (
+    win10Start < i &&
+    new Date(allAvailableFeeds[win10Start].created_at).getTime() <= cutoff
+  ) {
+    const oldValue = Number(allAvailableFeeds[win10Start].field7);
+
+    if (!isNaN(oldValue)) {
+      win10Sum -= oldValue;
+      win10Count--;
+    }
+
+    win10Start++;
+  }
+
+  // Il primo punto della media mobile viene prodotto solo dopo 24h.
+  if (ts >= currentSessionStartTs + 24 * 60 * 60 * 1000) {
+    if (win25Count > 0) {
+      movingAvgPoints.pm25.push(win25Sum / win25Count);
+    }
+
+    if (win10Count > 0) {
+      movingAvgPoints.pm10.push(win10Sum / win10Count);
+    }
+  }
+}
+
+// Consideriamo soltanto gli ultimi 24 punti disponibili.
+const pm25RangePoints = movingAvgPoints.pm25.slice(-24);
+const pm10RangePoints = movingAvgPoints.pm10.slice(-24);
+
+const getMovingAvgMinMaxStr = (points, unit, formatter) => {
+  if (!points.length) return '—';
+
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+
+  return `${formatter(min)} ${unit} — ${formatter(max)} ${unit}`;
+};
 
   // Helper for Min/Max range string
   const getMinMaxStr = (fieldKey, unit, sourceFeeds = allAvailableFeeds) => {
@@ -222,7 +305,7 @@ function updateKPICards(allAvailableFeeds) {
   if (hasFull24h) {
     const avg24PM25 = feedsForAvg.reduce((s, x) => s + Number(x.field6 || 0), 0) / feedsForAvg.length;
     document.getElementById('pm25Value').textContent = `${fmt0(avg24PM25)} µg/m³`;
-    document.getElementById('pm25avg').textContent = getMinMaxStr('field6', 'µg/m³', feeds24h);
+    document.getElementById('pm25avg').textContent = getMovingAvgMinMaxStr(pm25RangePoints, 'µg/m³', fmt0)
   } else {
     document.getElementById('pm25Value').textContent = `—`;
     document.getElementById('pm25avg').textContent = `in attesa 24h...`;
@@ -232,7 +315,7 @@ function updateKPICards(allAvailableFeeds) {
   if (hasFull24h) {
     const avg24PM10 = feedsForAvg.reduce((s, x) => s + Number(x.field7 || 0), 0) / feedsForAvg.length;
     document.getElementById('pm10Value').textContent = `${fmt0(avg24PM10)} µg/m³`;
-    document.getElementById('pm10avg').textContent = getMinMaxStr('field7', 'µg/m³', feeds24h);
+    document.getElementById('pm10avg').textContent = getMovingAvgMinMaxStr(pm10RangePoints, 'µg/m³', fmt0)
   } else {
     document.getElementById('pm10Value').textContent = `—`;
     document.getElementById('pm10avg').textContent = `in attesa 24h...`;
