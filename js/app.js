@@ -463,7 +463,7 @@ function initApp() {
         localStorage.setItem('aqi_station_idx', newIdx.toString());
       } catch (err) {}
 
-      state.charts = loadStationPreferences(newIdx).charts;
+      state = loadStationPreferences(newIdx);
       syncControlsUI();
       refreshDashboard();
 
