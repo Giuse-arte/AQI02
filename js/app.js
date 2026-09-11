@@ -171,8 +171,8 @@ function updateKPICards(allAvailableFeeds) {
   const feedsForAvg = feeds24h.length ? feeds24h : allAvailableFeeds;
 
   // Helper for Min/Max range string
-  const getMinMaxStr = (fieldKey, unit) => {
-    const validVals = allAvailableFeeds.map(x => Number(x[fieldKey])).filter(v => !isNaN(v));
+  const getMinMaxStr = (fieldKey, unit, sourceFeeds = allAvailableFeeds) => {
+    const validVals = sourceFeeds.map(x => Number(x[fieldKey])).filter(v => !isNaN(v));
     if (!validVals.length) return '—';
     const min = Math.min(...validVals);
     const max = Math.max(...validVals);
@@ -222,7 +222,7 @@ function updateKPICards(allAvailableFeeds) {
   if (hasFull24h) {
     const avg24PM25 = feedsForAvg.reduce((s, x) => s + Number(x.field6 || 0), 0) / feedsForAvg.length;
     document.getElementById('pm25Value').textContent = `${fmt0(avg24PM25)} µg/m³`;
-    document.getElementById('pm25avg').textContent = getMinMaxStr('field6', 'µg/m³');
+    document.getElementById('pm25avg').textContent = getMinMaxStr('field6', 'µg/m³', feeds24h);
   } else {
     document.getElementById('pm25Value').textContent = `—`;
     document.getElementById('pm25avg').textContent = `in attesa 24h...`;
@@ -232,7 +232,7 @@ function updateKPICards(allAvailableFeeds) {
   if (hasFull24h) {
     const avg24PM10 = feedsForAvg.reduce((s, x) => s + Number(x.field7 || 0), 0) / feedsForAvg.length;
     document.getElementById('pm10Value').textContent = `${fmt0(avg24PM10)} µg/m³`;
-    document.getElementById('pm10avg').textContent = getMinMaxStr('field7', 'µg/m³');
+    document.getElementById('pm10avg').textContent = getMinMaxStr('field7', 'µg/m³', feeds24h);
   } else {
     document.getElementById('pm10Value').textContent = `—`;
     document.getElementById('pm10avg').textContent = `in attesa 24h...`;
