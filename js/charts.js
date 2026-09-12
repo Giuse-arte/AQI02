@@ -552,8 +552,7 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
         scales: {
           x: getXAxisConfig(viewMode, dayVal, refEnd),
           y: {
-            beginAtZero: false,
-            grace: '10%',
+            min: 0,
             title: { display: true, text: meta.unit, color: yTickColor },
             ticks: { color: yTickColor },
             grid: { color: yGridColor, lineWidth: 0.8 }
