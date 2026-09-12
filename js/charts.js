@@ -506,6 +506,7 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
     }
 
     const isPMChart = chartId === '6' || chartId === '7';
+    const isPMAxisChart = chartId === '5' || chartId === '6' || chartId === '7'; // PM1/PM2.5/PM10: asse Y mai negativo
     const infoBtnHtml = isPMChart ? `<button class="kpi-info-btn" id="pmInfoBtn_${chartId}" style="position:static; margin-left: 0.5rem;" title="Info Limiti e Soglie PM">i</button>` : '';
 
     const card = document.createElement('div');
@@ -553,6 +554,7 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
           x: getXAxisConfig(viewMode, dayVal, refEnd),
           y: {
             beginAtZero: false,
+            min: isPMAxisChart ? 0 : undefined,
             grace: '10%',
             title: { display: true, text: meta.unit, color: yTickColor },
             ticks: { color: yTickColor },
@@ -779,6 +781,7 @@ const pm10RawPoints = movingAverages24h.pm10;
         x: getXAxisConfig(viewMode, dayVal, refEnd),
         y: {
           beginAtZero: false,
+          min: 0, // PM10/PM2.5: asse Y mai negativo
           grace: '10%',
           title: { display: true, text: 'µg/m³', color: yTickColor },
           ticks: { color: yTickColor },
