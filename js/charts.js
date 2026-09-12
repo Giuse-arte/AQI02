@@ -35,6 +35,114 @@ function addNullGapsToPoints(rawPoints, maxGapMs = 24 * 3600 * 1000) {
 }
 
 /**
+ * Calculates continuous 24h rolling averages for PM2.5 and PM10.
+ *
+ * Rules:
+ * - The first acquired point is the starting reference only.
+ * - The first 24h average is produced at the 24th hour/point.
+ * - The exact 24h boundary is excluded from the next window,
+ *   so point 24 averages points 1..24, point 25 averages 2..25, etc.
+ * - Missing acquisitions are not invented; only actually acquired
+ *   valid values inside the 24h temporal window are averaged.
+ * - A new 24h series starts after a station inactivity gap > 24h.
+ */
+function calculatePM24hMovingAverages(feeds) {
+  if (!Array.isArray(feeds) || !feeds.length) {
+    return { pm25: [], pm10: [] };
+  }
+
+  const parsed = feeds
+    .map(f => ({
+      ts: new Date(f.created_at).getTime(),
+      date: new Date(f.created_at),
+      v25: Number(f.field6),
+      v10: Number(f.field7)
+    }))
+    .filter(p => !isNaN(p.ts))
+    .sort((a, b) => a.ts - b.ts);
+
+  if (!parsed.length) {
+    return { pm25: [], pm10: [] };
+  }
+
+  // Find the beginning of the current continuous operational session.
+  let sessionStartIndex = 0;
+
+  for (let i = parsed.length - 1; i > 0; i--) {
+    if (parsed[i].ts - parsed[i - 1].ts > 24 * 60 * 60 * 1000) {
+      sessionStartIndex = i;
+      break;
+    }
+  }
+
+  const sessionFeeds = parsed.slice(sessionStartIndex);
+
+  if (sessionFeeds.length < 2) {
+    return { pm25: [], pm10: [] };
+  }
+
+  const sessionStartTs = sessionFeeds[0].ts;
+  const availableFromTs = sessionStartTs + 24 * 60 * 60 * 1000;
+
+  const pm25 = [];
+  const pm10 = [];
+
+  for (let i = 0; i < sessionFeeds.length; i++) {
+    const current = sessionFeeds[i];
+
+    // No 24h average before a full 24h elapsed from session start.
+    if (current.ts < availableFromTs) {
+      continue;
+    }
+
+    const cutoff = current.ts - 24 * 60 * 60 * 1000;
+
+    let sum25 = 0;
+    let count25 = 0;
+    let sum10 = 0;
+    let count10 = 0;
+
+    for (let j = 0; j <= i; j++) {
+      const candidate = sessionFeeds[j];
+
+      // IMPORTANT:
+      // Exact 24h boundary is excluded.
+      // Therefore at point 24 the window contains points 1..24,
+      // not point 0.
+      if (candidate.ts <= cutoff) {
+        continue;
+      }
+
+      if (!isNaN(candidate.v25)) {
+        sum25 += candidate.v25;
+        count25++;
+      }
+
+      if (!isNaN(candidate.v10)) {
+        sum10 += candidate.v10;
+        count10++;
+      }
+    }
+
+    if (count25 > 0) {
+      pm25.push({
+        x: current.date,
+        y: sum25 / count25
+      });
+    }
+
+    if (count10 > 0) {
+      pm10.push({
+        x: current.date,
+        y: sum10 / count10
+      });
+    }
+  }
+
+  return { pm25, pm10 };
+}
+
+/**
  * Calculates start and end Date bounds for the X-axis across all view modes
  */
 function getXAxisBounds(viewMode, dayVal, refEnd) {
@@ -591,34 +699,10 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
     card.querySelector('#comboCanvasContainer').appendChild(warning);
   }
 
-  const pm25RawPoints = [];
-  const pm10RawPoints = [];
+const movingAverages24h = calculatePM24hMovingAverages(feeds);
 
-  let win25Sum = 0, win25Count = 0, win25Start = 0;
-  let win10Sum = 0, win10Count = 0, win10Start = 0;
-
-  for (let i = 0; i < parsed.length; i++) {
-    const p = parsed[i];
-    const cutoff = p.ts - 24 * 60 * 60 * 1000;
-
-    if (!isNaN(p.v25)) { win25Sum += p.v25; win25Count++; }
-    if (!isNaN(p.v10)) { win10Sum += p.v10; win10Count++; }
-
-    while (win25Start < i && parsed[win25Start].ts < cutoff) {
-      if (!isNaN(parsed[win25Start].v25)) { win25Sum -= parsed[win25Start].v25; win25Count--; }
-      win25Start++;
-    }
-    while (win10Start < i && parsed[win10Start].ts < cutoff) {
-      if (!isNaN(parsed[win10Start].v10)) { win10Sum -= parsed[win10Start].v10; win10Count--; }
-      win10Start++;
-    }
-
-    // Only generate 24h rolling moving average points once 24h of continuous history exist in current session
-    if (p.ts >= availableFromTs) {
-      if (win25Count > 0) pm25RawPoints.push({ x: p.date, y: win25Sum / win25Count });
-      if (win10Count > 0) pm10RawPoints.push({ x: p.date, y: win10Sum / win10Count });
-    }
-  }
+const pm25RawPoints = movingAverages24h.pm25;
+const pm10RawPoints = movingAverages24h.pm10;
 
   const pm25Points = addNullGapsToPoints(pm25RawPoints);
   const pm10Points = addNullGapsToPoints(pm10RawPoints);
