@@ -219,24 +219,66 @@ const feedsForAvg = feeds24h.length ? feeds24h : allAvailableFeeds;
   document.getElementById('pm1MM').textContent = getMinMaxStr('field5', 'µg/m³');
 
   // Card 6: PM2.5 (24h Moving Average as main value + 24h Min-Max range as subtext)
-  if (hasFull24h) {
-    const avg24PM25 = feedsForAvg.reduce((s, x) => s + Number(x.field6 || 0), 0) / feedsForAvg.length;
-    document.getElementById('pm25Value').textContent = `${fmt0(avg24PM25)} µg/m³`;
-    document.getElementById('pm25avg').textContent = getMinMaxStr('field6', 'µg/m³', feeds24h)
+ if (hasFull24h) {
+  const movingAverages24h = calculatePM24hMovingAverages(allAvailableFeeds);
+  const pm25Points = movingAverages24h.pm25;
+
+  if (pm25Points.length) {
+    // Main value = latest 24h moving average point
+    const latestPM25 = pm25Points.at(-1).y;
+    document.getElementById('pm25Value').textContent = `${fmt0(latestPM25)} µg/m³`;
+
+    // Min/Max = last 24 calculated moving-average points
+    const pm25Window = pm25Points.slice(-24);
+    const pm25Values = pm25Window.map(p => p.y).filter(v => !isNaN(v));
+
+    if (pm25Values.length) {
+      const min = Math.min(...pm25Values);
+      const max = Math.max(...pm25Values);
+      document.getElementById('pm25avg').textContent =
+        `${fmt0(min)} µg/m³ — ${fmt0(max)} µg/m³`;
+    } else {
+      document.getElementById('pm25avg').textContent = `—`;
+    }
   } else {
     document.getElementById('pm25Value').textContent = `—`;
     document.getElementById('pm25avg').textContent = `in attesa 24h...`;
   }
+} else {
+  document.getElementById('pm25Value').textContent = `—`;
+  document.getElementById('pm25avg').textContent = `in attesa 24h...`;
+}
 
   // Card 7: PM10 (24h Moving Average as main value + 24h Min-Max range as subtext)
-  if (hasFull24h) {
-    const avg24PM10 = feedsForAvg.reduce((s, x) => s + Number(x.field7 || 0), 0) / feedsForAvg.length;
-    document.getElementById('pm10Value').textContent = `${fmt0(avg24PM10)} µg/m³`;
-    document.getElementById('pm10avg').textContent = getMinMaxStr('field7', 'µg/m³', feeds24h)
+ if (hasFull24h) {
+  const movingAverages24h = calculatePM24hMovingAverages(allAvailableFeeds);
+  const pm10Points = movingAverages24h.pm10;
+
+  if (pm10Points.length) {
+    // Main value = latest 24h moving average point
+    const latestPM10 = pm10Points.at(-1).y;
+    document.getElementById('pm10Value').textContent = `${fmt0(latestPM10)} µg/m³`;
+
+    // Min/Max = last 24 calculated moving-average points
+    const pm10Window = pm10Points.slice(-24);
+    const pm10Values = pm10Window.map(p => p.y).filter(v => !isNaN(v));
+
+    if (pm10Values.length) {
+      const min = Math.min(...pm10Values);
+      const max = Math.max(...pm10Values);
+      document.getElementById('pm10avg').textContent =
+        `${fmt0(min)} µg/m³ — ${fmt0(max)} µg/m³`;
+    } else {
+      document.getElementById('pm10avg').textContent = `—`;
+    }
   } else {
     document.getElementById('pm10Value').textContent = `—`;
     document.getElementById('pm10avg').textContent = `in attesa 24h...`;
   }
+} else {
+  document.getElementById('pm10Value').textContent = `—`;
+  document.getElementById('pm10avg').textContent = `in attesa 24h...`;
+}
 
   // Card 8: AQI Index (Requires full 24h history for EEA/EPA compliance)
   document.getElementById('aqiTitle').textContent = `AQI (${state.mode} 24h)`;
