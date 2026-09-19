@@ -10,8 +10,30 @@ const MICS_CHANNEL = {
 
 // Externalized Stations Configuration - Add new stations here effortlessly
 const STATIONS = [
-  { id: 3482211, apiKey: 'G704K57NEFAVC0FW', name: 'Device N° AQI_01', location: 'Stazione Primaria' },
-  { id: 3482910, apiKey: 'DIH2HZ9B5AFO3Y40', name: 'Device N° AQI_02', location: 'Stazione Secondaria' }
+  { 
+    id: 3482211, 
+    apiKey: 'G704K57NEFAVC0FW', 
+    name: 'Device Nº AQI_01', 
+    location: 'Stazione Primaria',
+    hasMics: true,
+    micsFields: { co: 'field1', no2: 'field2', nh3: 'field3' },
+    gasSensor: {
+      card: 'Grove Gas V2',
+      chart: 'GROVE - GAS SENSOR V2(MULTICHANNEL)'
+    }
+  },
+  { 
+    id: 3482910, 
+    apiKey: 'DIH2HZ9B5AFO3Y40', 
+    name: 'Device Nº AQI_02', 
+    location: 'Stazione Secondaria',
+    hasMics: true,
+    micsFields: { co: 'field4', no2: 'field5', nh3: 'field6' },
+    gasSensor: {
+      card: 'MiCS-6814 V1',
+      chart: 'GROVE MULTICHANNEL GAS SENSOR V1 (MiCS-6814)'
+    }
+  }
 ];
 
 // Helper per determinare dinamicamente il sensore gas:
