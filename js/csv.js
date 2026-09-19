@@ -8,7 +8,7 @@
  * - Decimal separator: ','
  * - Columns: Date/Time;year;month;temp;hum;pres;voc;PM1;PM2_5;PM2_5_mavg;PM10;PM10_mavg
  */
-function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
+function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore, rawMicsFeedsStore, currentStation) {
   if (!rawFeedsStore || !rawFeedsStore.length) {
     alert('Nessun dato disponibile da esportare.');
     return;
@@ -36,6 +36,18 @@ function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
 
   // Sort feeds chronologically
   const feeds = [...rawFeedsStore].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+  // Determine MiCS fields strictly for active station
+  const stationHasMics = currentStation?.hasMics !== false && !!currentStation?.micsFields;
+  const micsFields = stationHasMics ? currentStation.micsFields : null;
+
+  // Prepare MiCS feeds sorted chronologically
+  const sortedMics = (stationHasMics && rawMicsFeedsStore)
+    ? rawMicsFeedsStore
+        .filter(f => f && (f[micsFields.co] != null || f[micsFields.no2] != null || f[micsFields.nh3] != null))
+        .map(f => ({ ts: new Date(f.created_at).getTime(), raw: f }))
+        .sort((a, b) => a.ts - b.ts)
+    : [];
 
   // Compute 24h rolling moving average map for PM2.5 and PM10 in O(N) linear time
   const mavg25Map = {};
@@ -74,8 +86,8 @@ function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
   rows.push(filename.replace('.csv', ''));
   rows.push('');
 
-  // Fixed Header Specification
-  const header = ['Date/Time', 'year', 'month', 'temp', 'hum', 'pres', 'voc', 'PM1', 'PM2_5', 'PM2_5_mavg', 'PM10', 'PM10_mavg'];
+  // Fixed Header Specification (Extended with MiCS-6814 Gas concentrations in µg/m³)
+  const header = ['Date/Time', 'year', 'month', 'temp', 'hum', 'pres', 'voc', 'PM1', 'PM2_5', 'PM2_5_mavg', 'PM10', 'PM10_mavg', 'MICS_CO', 'MICS_NO2', 'MICS_NH3'];
   rows.push(header.join(sep));
 
   const formatNum = (v) => {
@@ -96,6 +108,21 @@ function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
     const yearStr = dateObj.getFullYear().toString();
     const monthStr = (dateObj.getMonth() + 1).toString();
 
+    // Match closest MiCS feed within a 15-minute tolerance window
+    let closestMicsRaw = null;
+    let minDiff = 15 * 60 * 1000;
+    for (let m of sortedMics) {
+      const diff = Math.abs(m.ts - ts);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestMicsRaw = m.raw;
+      }
+    }
+
+    const coVal = (closestMicsRaw && micsFields) ? closestMicsRaw[micsFields.co] : '';
+    const no2Val = (closestMicsRaw && micsFields) ? closestMicsRaw[micsFields.no2] : '';
+    const nh3Val = (closestMicsRaw && micsFields) ? closestMicsRaw[micsFields.nh3] : '';
+
     const row = [
       dateTimeFormatted,
       yearStr,
@@ -108,7 +135,10 @@ function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore) {
       formatNum(f.field6),         // PM2_5
       formatNum(mavg25Map[ts]),    // PM2_5_mavg
       formatNum(f.field7),         // PM10
-      formatNum(mavg10Map[ts])     // PM10_mavg
+      formatNum(mavg10Map[ts]),    // PM10_mavg
+      formatNum(coVal),            // MICS_CO
+      formatNum(no2Val),           // MICS_NO2
+      formatNum(nh3Val)            // MICS_NH3
     ];
 
     rows.push(row.join(sep));

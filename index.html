@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
   <script>
@@ -147,6 +147,15 @@
             <label class="checkbox-item">
               <input type="checkbox" checked data-chart-id="4" /> VOC – BME680
             </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="mics_co" /> CO – Grove Gas Sensor V2
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="mics_no2" /> NO2 – Grove Gas Sensor V2
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" checked data-chart-id="mics_nh3" /> NH3 – Grove Gas Sensor V2
+            </label>
           </div>
 
           <hr class="panel-divider" />
@@ -167,7 +176,7 @@
        ========================================================================== -->
   <main>
 
-    <!-- 8 SYNTHETIC KPI CARDS SECTION -->
+    <!-- 13 SYNTHETIC KPI CARDS SECTION (2 RIGHE) -->
     <section class="glass-panel kpi-section">
       <div class="section-header">
         <h2 class="section-title">
@@ -176,40 +185,9 @@
         <span class="last-update-tag" id="lastUpdate">Ultima rilevazione: —</span>
       </div>
 
-      <div class="kpi-grid">
-        <!-- Card 1: Umidità -->
-        <div class="kpi-card">
-          <span class="kpi-title">Umidità</span>
-          <span class="kpi-sensor">BME680</span>
-          <div class="kpi-value" id="humValue">— %</div>
-          <span class="kpi-subtext" id="humMM">—</span>
-        </div>
-
-        <!-- Card 2: Temperatura -->
-        <div class="kpi-card">
-          <span class="kpi-title">Temperatura</span>
-          <span class="kpi-sensor">BME680</span>
-          <div class="kpi-value" id="tempValue">— °C</div>
-          <span class="kpi-subtext" id="tempMM">—</span>
-        </div>
-
-        <!-- Card 3: Pressione -->
-        <div class="kpi-card">
-          <span class="kpi-title">Pressione</span>
-          <span class="kpi-sensor">BME680</span>
-          <div class="kpi-value" id="pressValue">— hPa</div>
-          <span class="kpi-subtext" id="pressMM">—</span>
-        </div>
-
-        <!-- Card 4: VOC -->
-        <div class="kpi-card">
-          <span class="kpi-title">VOC</span>
-          <span class="kpi-sensor">BME680</span>
-          <div class="kpi-value" id="vocValue">— kOhm</div>
-          <span class="kpi-subtext" id="vocDelta">—</span>
-        </div>
-
-        <!-- Card 5: PM1 -->
+      <!-- 1a Riga: Particolato e Qualità dell'Aria -->
+      <div class="kpi-grid kpi-grid-row1">
+        <!-- Card 1: PM1 -->
         <div class="kpi-card">
           <span class="kpi-title">PM1</span>
           <span class="kpi-sensor">PMS5003</span>
@@ -217,7 +195,23 @@
           <span class="kpi-subtext" id="pm1MM">—</span>
         </div>
 
-        <!-- Card 6: PM2.5 -->
+        <!-- Card 2: PM2.5 (Istantaneo) -->
+        <div class="kpi-card">
+          <span class="kpi-title">PM2.5</span>
+          <span class="kpi-sensor">PMS5003</span>
+          <div class="kpi-value" id="pm25InstantValue">— µg/m³</div>
+          <span class="kpi-subtext" id="pm25InstantMM">—</span>
+        </div>
+
+        <!-- Card 3: PM10 (Istantaneo) -->
+        <div class="kpi-card">
+          <span class="kpi-title">PM10</span>
+          <span class="kpi-sensor">PMS5003</span>
+          <div class="kpi-value" id="pm10InstantValue">— µg/m³</div>
+          <span class="kpi-subtext" id="pm10InstantMM">—</span>
+        </div>
+
+        <!-- Card 4: PM2.5 (24h) -->
         <div class="kpi-card">
           <span class="kpi-title">PM2.5 (24h)</span>
           <span class="kpi-sensor">PMS5003</span>
@@ -225,7 +219,7 @@
           <span class="kpi-subtext" id="pm25avg">media 24h: —</span>
         </div>
 
-        <!-- Card 7: PM10 -->
+        <!-- Card 5: PM10 (24h) -->
         <div class="kpi-card">
           <span class="kpi-title">PM10 (24h)</span>
           <span class="kpi-sensor">PMS5003</span>
@@ -233,7 +227,7 @@
           <span class="kpi-subtext" id="pm10avg">media 24h: —</span>
         </div>
 
-        <!-- Card 8: AQI -->
+        <!-- Card 6: AQI -->
         <div class="kpi-card">
           <button class="kpi-info-btn" id="aqiInfoBtn">i</button>
           <span class="kpi-title" id="aqiTitle">AQI (EEA 24h)</span>
@@ -242,9 +236,68 @@
           <span class="aqi-badge" id="aqiBadge">—</span>
         </div>
       </div>
+
+      <!-- 2a Riga: Meteo, VOC e Gas Grove - Gas Sensor V2 -->
+      <div class="kpi-grid kpi-grid-row2">
+        <!-- Card 7: Umidità -->
+        <div class="kpi-card">
+          <span class="kpi-title">Umidità</span>
+          <span class="kpi-sensor">BME680</span>
+          <div class="kpi-value" id="humValue">— %</div>
+          <span class="kpi-subtext" id="humMM">—</span>
+        </div>
+
+        <!-- Card 8: Temperatura -->
+        <div class="kpi-card">
+          <span class="kpi-title">Temperatura</span>
+          <span class="kpi-sensor">BME680</span>
+          <div class="kpi-value" id="tempValue">— °C</div>
+          <span class="kpi-subtext" id="tempMM">—</span>
+        </div>
+
+        <!-- Card 9: Pressione -->
+        <div class="kpi-card">
+          <span class="kpi-title">Pressione</span>
+          <span class="kpi-sensor">BME680</span>
+          <div class="kpi-value" id="pressValue">— hPa</div>
+          <span class="kpi-subtext" id="pressMM">—</span>
+        </div>
+
+        <!-- Card 10: VOC -->
+        <div class="kpi-card">
+          <span class="kpi-title">VOC</span>
+          <span class="kpi-sensor">BME680</span>
+          <div class="kpi-value" id="vocValue">— kOhm</div>
+          <span class="kpi-subtext" id="vocDelta">—</span>
+        </div>
+
+        <!-- Card 11: CO -->
+        <div class="kpi-card">
+          <span class="kpi-title">CO</span>
+          <span class="kpi-sensor" id="micsCoSensor">Grove Gas V2</span>
+          <div class="kpi-value" id="micsCoValue">— µg/m³</div>
+          <span class="kpi-subtext" id="micsCoMM">—</span>
+        </div>
+
+        <!-- Card 12: NO2 -->
+        <div class="kpi-card">
+          <span class="kpi-title">NO₂</span>
+          <span class="kpi-sensor" id="micsNo2Sensor">Grove Gas V2</span>
+          <div class="kpi-value" id="micsNo2Value">— µg/m³</div>
+          <span class="kpi-subtext" id="micsNo2MM">—</span>
+        </div>
+
+        <!-- Card 13: NH3 -->
+        <div class="kpi-card">
+          <span class="kpi-title">NH₃</span>
+          <span class="kpi-sensor" id="micsNh3Sensor">Grove Gas V2</span>
+          <div class="kpi-value" id="micsNh3Value">— µg/m³</div>
+          <span class="kpi-subtext" id="micsNh3MM">—</span>
+        </div>
+      </div>
     </section>
 
-    <!-- 8 HISTORICAL CHARTS SECTION -->
+    <!-- HISTORICAL CHARTS SECTION -->
     <section class="glass-panel charts-wrapper">
       <div class="section-header">
         <h2 class="section-title">Grafici Storici Sensori</h2>

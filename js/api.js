@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    AQI DASHBOARD 2.0 - THINGSPEAK API & DEMO DATA FETCHER
    ========================================================================== */
 
@@ -39,7 +39,7 @@ function getDemoData() {
  * Fetch latest historical feeds from ThingSpeak without date restrictions (up to 8000 latest feeds)
  */
 async function fetchLatestChannelFeeds(channelId, apiKey) {
-  const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?results=8000&api_key=${apiKey}`;
+  const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?results=8000&api_key=${apiKey}&status=true`;
 
   try {
     const response = await fetch(url);
@@ -60,7 +60,7 @@ async function fetchChannelFeeds(channelId, apiKey, tStart, tEnd) {
   const startStr = formatLocalDateTime(startBuffer);
   const endStr = formatLocalDateTime(tEnd);
 
-  const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}&results=8000&api_key=${apiKey}`;
+  const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}&results=8000&api_key=${apiKey}&status=true`;
 
   try {
     const response = await fetch(url);
@@ -86,10 +86,15 @@ async function fetchChannelFeeds(channelId, apiKey, tStart, tEnd) {
 /**
  * Parses Geolocation metadata and RSSI strictly from the latest feed reading and channel settings
  */
-function parseGeoAndRssi(channelObj, lastFeed) {
+function parseGeoAndRssi(channelObj, lastFeed, stationObj) {
   let manualGeo = { lat: null, lon: null };
-  const chLat = parseFloat(channelObj?.latitude);
-  const chLon = parseFloat(channelObj?.longitude);
+  let chLat = parseFloat(channelObj?.latitude);
+  let chLon = parseFloat(channelObj?.longitude);
+
+  if ((isNaN(chLat) || isNaN(chLon) || (chLat === 0 && chLon === 0)) && stationObj) {
+    chLat = parseFloat(stationObj.latitude);
+    chLon = parseFloat(stationObj.longitude);
+  }
 
   if (!isNaN(chLat) && !isNaN(chLon) && (chLat !== 0 || chLon !== 0)) {
     manualGeo = { lat: chLat, lon: chLon };
@@ -130,7 +135,7 @@ function parseGeoAndRssi(channelObj, lastFeed) {
   }
 
   return {
-    rssiStr: isNaN(rssi) ? '—' : `${rssi.toFixed(0)}`,
+    rssiStr: isNaN(rssi) ? '-' : `${rssi.toFixed(0)}`,
     geoStr,
     geoLabel,
     ledClass,

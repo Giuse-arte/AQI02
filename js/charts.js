@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    AQI DASHBOARD 2.0 - CHART.JS RENDERING ENGINE
    ========================================================================== */
 
@@ -145,21 +145,25 @@ function calculatePM24hMovingAverages(feeds) {
 /**
  * Calculates start and end Date bounds for the X-axis across all view modes
  */
-function getXAxisBounds(viewMode, dayVal, refEnd) {
+function getXAxisBounds(viewMode, dayVal, refEnd, tStart) {
   const referenceEnd = refEnd || new Date();
+  let minDate;
   if (viewMode === 'year') {
-    return { min: new Date(referenceEnd.getTime() - 365 * 24 * 60 * 60 * 1000), max: referenceEnd };
-  }
-  if (viewMode === 'month') {
-    return { min: new Date(referenceEnd.getTime() - 30 * 24 * 60 * 60 * 1000), max: referenceEnd };
-  }
-  if (viewMode === 'week') {
-    return { min: new Date(referenceEnd.getTime() - 7 * 24 * 60 * 60 * 1000), max: referenceEnd };
-  }
-  if (viewMode === 'day' && dayVal) {
+    minDate = new Date(referenceEnd.getTime() - 365 * 24 * 60 * 60 * 1000);
+  } else if (viewMode === 'month') {
+    minDate = new Date(referenceEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
+  } else if (viewMode === 'week') {
+    minDate = new Date(referenceEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+  } else if (viewMode === 'day' && dayVal) {
     return { min: new Date(`${dayVal}T00:00:00`), max: new Date(`${dayVal}T23:59:59`) };
+  } else {
+    minDate = new Date(referenceEnd.getTime() - 24 * 60 * 60 * 1000);
   }
-  return { min: new Date(referenceEnd.getTime() - 24 * 60 * 60 * 1000), max: referenceEnd };
+
+  if (tStart && tStart > minDate) {
+    minDate = tStart;
+  }
+  return { min: minDate, max: referenceEnd };
 }
 
 /**
@@ -284,14 +288,15 @@ function getTooltipConfig() {
 /**
  * Generates X-Axis scale configuration based on active view mode, reference end date, and active theme
  */
-function getXAxisConfig(viewMode, dayVal, refEnd) {
+function getXAxisConfig(viewMode, dayVal, refEnd, tStart) {
   const referenceEnd = refEnd || new Date();
   const isLight = isLightTheme();
   const tickColor = isLight ? '#475569' : '#94a3b8';
   const gridColor = isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)';
 
   if (viewMode === 'year') {
-    const axisStart = new Date(referenceEnd.getTime() - 365 * 24 * 60 * 60 * 1000);
+    let axisStart = new Date(referenceEnd.getTime() - 365 * 24 * 60 * 60 * 1000);
+    if (tStart && tStart > axisStart) axisStart = tStart;
     return {
       type: 'time',
       min: axisStart,
@@ -312,7 +317,8 @@ function getXAxisConfig(viewMode, dayVal, refEnd) {
   }
 
   if (viewMode === 'month') {
-    const axisStart = new Date(referenceEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
+    let axisStart = new Date(referenceEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
+    if (tStart && tStart > axisStart) axisStart = tStart;
 
     return {
       type: 'time',
@@ -347,7 +353,8 @@ function getXAxisConfig(viewMode, dayVal, refEnd) {
   }
 
   if (viewMode === 'week') {
-    const axisStart = new Date(referenceEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+    let axisStart = new Date(referenceEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+    if (tStart && tStart > axisStart) axisStart = tStart;
 
     return {
       type: 'time',
@@ -380,7 +387,10 @@ function getXAxisConfig(viewMode, dayVal, refEnd) {
   }
 
   // Live / Day modes
-  const liveMin = viewMode === 'live' ? new Date(referenceEnd.getTime() - 24 * 60 * 60 * 1000) : undefined;
+  let liveMin = viewMode === 'live' ? new Date(referenceEnd.getTime() - 24 * 60 * 60 * 1000) : undefined;
+  if (viewMode === 'live' && tStart && tStart > liveMin) {
+    liveMin = tStart;
+  }
   const liveMax = viewMode === 'live' ? referenceEnd : undefined;
 
   return {
@@ -429,11 +439,40 @@ function destroyAllCharts() {
 /**
  * Main Chart Rendering Orchestrator
  */
-function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayVal, aqiMode, tStart, refEnd) {
+function renderActiveCharts(containerEl, feeds, micsFeeds, selectedChartIds, viewMode, dayVal, aqiMode, tStart, refEnd, currentStation) {
+  // Gracefully handle legacy argument ordering if micsFeeds is omitted
+  if (Array.isArray(micsFeeds) && micsFeeds.length > 0 && typeof micsFeeds[0] === 'string') {
+    currentStation = refEnd;
+    refEnd = tStart;
+    tStart = aqiMode;
+    aqiMode = dayVal;
+    dayVal = viewMode;
+    viewMode = selectedChartIds;
+    selectedChartIds = micsFeeds;
+    micsFeeds = [];
+  }
+
   destroyAllCharts();
   containerEl.innerHTML = '';
 
-  const activeFeeds = feeds.length > 1500 ? feeds.slice(-1500) : feeds;
+  const filteredFeeds = tStart ? feeds.filter(f => new Date(f.created_at) >= tStart) : feeds;
+  const activeFeeds = filteredFeeds.length > 1500 ? filteredFeeds.slice(-1500) : filteredFeeds;
+
+  const filteredMicsFeeds = tStart ? (micsFeeds || []).filter(f => new Date(f.created_at) >= tStart) : (micsFeeds || []);
+  const activeMicsFeeds = filteredMicsFeeds.length > 1500 ? filteredMicsFeeds.slice(-1500) : filteredMicsFeeds;
+
+  // Show clear user-friendly banner if station has no data or channel is offline
+  if ((!activeFeeds || !activeFeeds.length) && (!activeMicsFeeds || !activeMicsFeeds.length)) {
+    const emptyNotice = document.createElement('div');
+    emptyNotice.style.cssText = 'grid-column: 1 / -1; padding: 3rem 1.5rem; text-align: center; color: var(--text-muted); background: var(--card-bg); border: 1px dashed var(--card-border); border-radius: var(--radius-md); margin: 1rem 0;';
+    emptyNotice.innerHTML = `
+      <div style="font-size: 2.2rem; margin-bottom: 0.6rem;">📡</div>
+      <h3 style="color: var(--text-main); font-size: 1.15rem; margin-bottom: 0.5rem; font-weight: 600;">Nessun dato disponibile per ${currentStation?.name || 'questa centralina'}</h3>
+      <p style="font-size: 0.88rem; color: var(--text-dim); max-width: 520px; margin: 0 auto; line-height: 1.5;">Il canale ThingSpeak configurato (ID: <strong>${currentStation?.id || '—'}</strong>) non risponde o non contiene rilevazioni per il periodo selezionato.</p>
+    `;
+    containerEl.appendChild(emptyNotice);
+    return;
+  }
   const isExtended = ['week', 'month', 'year'].includes(viewMode);
   const aggFn = viewMode === 'year' ? aggregateDaily : isExtended ? aggregateHourly : null;
 
@@ -441,22 +480,117 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
   const yTickColor = isLight ? '#475569' : '#94a3b8';
   const yGridColor = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.06)';
   const isYearMode = viewMode === 'year';
-  const bounds = getXAxisBounds(viewMode, dayVal, refEnd);
+  const bounds = getXAxisBounds(viewMode, dayVal, refEnd, tStart);
   const fullRangePoints = [bounds.min, bounds.max];
 
-  // Fixed display order: 5 (PM1), 6 (PM2.5), 7 (PM10), combo, 1 (Hum), 2 (Temp), 3 (Pres), 4 (VOC)
-  const renderOrder = ['5', '6', '7', 'combo', '1', '2', '3', '4'];
+  // Fixed display order: 5 (PM1), 6 (PM2.5), 7 (PM10), combo, 1 (Hum), 2 (Temp), 3 (Pres), 4 (VOC), mics_co, mics_no2, mics_nh3
+  const renderOrder = ['5', '6', '7', 'combo', '1', '2', '3', '4', 'mics_co', 'mics_no2', 'mics_nh3'];
 
   renderOrder.forEach(chartId => {
     if (!selectedChartIds.includes(chartId)) return;
 
     if (chartId === 'combo') {
-      renderComboChart(containerEl, activeFeeds, viewMode, dayVal, aqiMode, tStart, refEnd);
+      renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart, refEnd);
       return;
     }
 
     if (chartId === '4') {
-      renderVOCChart(containerEl, activeFeeds, viewMode, dayVal, refEnd);
+      renderVOCChart(containerEl, activeFeeds, viewMode, dayVal, refEnd, tStart);
+      return;
+    }
+
+    if (chartId.startsWith('mics_')) {
+      const meta = CHART_META[chartId];
+      if (!meta) return;
+
+      const gasSensor = getStationGasSensor(currentStation, feeds, micsFeeds);
+      const sensorLabel = gasSensor?.chart || meta.sensor;
+
+      if (!currentStation?.hasMics || !currentStation?.micsFields) {
+        const card = document.createElement('div');
+        card.className = 'chart-card';
+        card.id = `card_${chartId}`;
+        card.innerHTML = `
+          <div class="chart-card-header">
+            <div class="chart-title-group">
+              <span class="chart-card-title">${meta.title}</span>
+              <span class="chart-card-sensor">${sensorLabel}</span>
+            </div>
+          </div>
+          <div class="chart-canvas-container" style="display: flex; align-items: center; justify-content: center; text-align: center; min-height: 220px; padding: 2rem;">
+            <div style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">
+              <div style="font-size: 1.6rem; margin-bottom: 0.4rem;">ℹ️</div>
+              <strong>${sensorLabel} non presente</strong><br/>
+              <span style="font-size: 0.85rem; color: var(--text-dim);">Questo sensore non è installato su ${currentStation?.name || 'questa centralina'}.</span>
+            </div>
+          </div>
+        `;
+        containerEl.appendChild(card);
+        return;
+      }
+
+      const micsFields = currentStation.micsFields;
+      let gasField = null;
+      if (chartId === 'mics_co') gasField = micsFields.co;
+      else if (chartId === 'mics_no2') gasField = micsFields.no2;
+      else if (chartId === 'mics_nh3') gasField = micsFields.nh3;
+
+      if (!gasField) return;
+
+      const validMicsFeeds = activeMicsFeeds.filter(f => f[gasField] !== null && f[gasField] !== undefined && f[gasField] !== '' && !isNaN(Number(f[gasField])));
+      const rawPoints = aggFn ? aggFn(validMicsFeeds, gasField) : validMicsFeeds.map(f => ({ x: new Date(f.created_at), y: Number(f[gasField]) }));
+      const points = addNullGapsToPoints(rawPoints);
+
+      const datasets = [{
+        label: meta.title,
+        data: points,
+        spanGaps: false,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 2,
+        borderColor: meta.color,
+        backgroundColor: meta.color
+      }];
+
+      const card = document.createElement('div');
+      card.className = 'chart-card';
+      card.id = `card_${chartId}`;
+      card.innerHTML = `
+        <div class="chart-card-header">
+          <div class="chart-title-group">
+            <span class="chart-card-title">${meta.title}</span>
+            <span class="chart-card-sensor">${sensorLabel}</span>
+          </div>
+        </div>
+        <div class="chart-canvas-container">
+          <canvas id="chart_canvas_${chartId}"></canvas>
+        </div>
+      `;
+      containerEl.appendChild(card);
+
+      const ctx = card.querySelector('canvas').getContext('2d');
+      chartInstances[chartId] = new Chart(ctx, {
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: getTooltipConfig()
+          },
+          scales: {
+            x: getXAxisConfig(viewMode, dayVal, refEnd, tStart),
+            y: {
+              beginAtZero: true,
+              grace: '10%',
+              title: { display: true, text: meta.unit, color: yTickColor },
+              ticks: { color: yTickColor },
+              grid: { color: yGridColor, lineWidth: 0.8 }
+            }
+          }
+        }
+      });
       return;
     }
 
@@ -551,7 +685,7 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
           tooltip: getTooltipConfig()
         },
         scales: {
-          x: getXAxisConfig(viewMode, dayVal, refEnd),
+          x: getXAxisConfig(viewMode, dayVal, refEnd, tStart),
           y: {
             beginAtZero: false,
             min: isPMAxisChart ? 0 : undefined,
@@ -569,7 +703,7 @@ function renderActiveCharts(containerEl, feeds, selectedChartIds, viewMode, dayV
 /**
  * Render VOC Delta Chart
  */
-function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
+function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd, tStart) {
   const { points: rawVocPoints } = calculateVOCBaselineAndDelta(feeds, feeds);
   const points = addNullGapsToPoints(rawVocPoints.map(p => ({ x: p.x, y: p.yDelta })));
 
@@ -616,7 +750,7 @@ function renderVOCChart(containerEl, feeds, viewMode, dayVal, refEnd) {
         tooltip: getTooltipConfig()
       },
       scales: {
-        x: getXAxisConfig(viewMode, dayVal, refEnd),
+        x: getXAxisConfig(viewMode, dayVal, refEnd, tStart),
         y: {
           beginAtZero: false,
           grace: '10%',
@@ -671,15 +805,27 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
     }
   };
 
-  const parsed = feeds.map(f => ({
-    ts: new Date(f.created_at).getTime(),
-    date: new Date(f.created_at),
-    v25: Number(f.field6),
-    v10: Number(f.field7)
-  }));
+    const parsed = (feeds || [])
+    .filter(f => f && f.created_at)
+    .map(f => ({
+      ts: new Date(f.created_at).getTime(),
+      date: new Date(f.created_at),
+      v25: Number(f.field6),
+      v10: Number(f.field7)
+    }))
+    .sort((a, b) => a.ts - b.ts);
+
+  if (!parsed.length) {
+    const warning = document.createElement('div');
+    warning.className = 'combo-empty-warning';
+    warning.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 23, 42, 0.92); color: #f59e0b; padding: 1.2rem 1.8rem; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.4); text-align: center; font-size: 0.92rem; font-weight: 500; z-index: 10; pointer-events: none; max-width: 90%; box-shadow: 0 8px 25px rgba(0,0,0,0.5);';
+    warning.textContent = '⚠️ Nessun dato disponibile per il periodo selezionato.';
+    card.querySelector('#comboCanvasContainer').appendChild(warning);
+    return;
+  }
 
   // Identify current active session start after any gap > 24 hours
-  let currentSessionStartTs = parsed.length ? parsed[0].ts : tStart.getTime();
+  let currentSessionStartTs = parsed[0].ts;
   for (let i = parsed.length - 1; i > 0; i--) {
     if (parsed[i].ts - parsed[i - 1].ts > 24 * 3600 * 1000) {
       currentSessionStartTs = parsed[i].ts;
@@ -687,18 +833,17 @@ function renderComboChart(containerEl, feeds, viewMode, dayVal, aqiMode, tStart,
     }
   }
 
-  const latestFeedTs = parsed.length ? parsed[parsed.length - 1].ts : new Date().getTime();
+  const latestFeedTs = parsed[parsed.length - 1].ts;
   const sessionDurationMs = latestFeedTs - currentSessionStartTs;
   const has24hHistory = sessionDurationMs >= 24 * 60 * 60 * 1000;
-  const availableFromTs = currentSessionStartTs + 24 * 60 * 60 * 1000;
 
-  // Display explicit warning overlay when station restarted < 24 hours ago
-  if (!has24hHistory) {
-    const warning = document.createElement('div');
-    warning.className = 'combo-empty-warning';
-    warning.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 23, 42, 0.9); color: #f59e0b; padding: 1.2rem 1.8rem; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.4); text-align: center; font-size: 0.92rem; font-weight: 500; z-index: 10; pointer-events: none; max-width: 90%; box-shadow: 0 8px 25px rgba(0,0,0,0.5);';
-    warning.textContent = '⚠️ In attesa di 24 ore di dati continui per il calcolo della media mobile (centralina riavviata di recente).';
-    card.querySelector('#comboCanvasContainer').appendChild(warning);
+  // Se la centralina ha accumulato meno di 24h, mostra un badge discreto non bloccante in alto a destra
+  if (!has24hHistory && sessionDurationMs > 0) {
+    const hoursAccum = Math.max(1, Math.round(sessionDurationMs / (3600 * 1000)));
+    const badge = document.createElement('div');
+    badge.style.cssText = 'position: absolute; top: 8px; right: 12px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.35); padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 500; z-index: 5; pointer-events: none;';
+    badge.textContent = `Media progressiva (${hoursAccum}h accumulate)`;
+    card.querySelector('#comboCanvasContainer').appendChild(badge);
   }
 
 const movingAverages24h = calculatePM24hMovingAverages(feeds);
@@ -733,7 +878,7 @@ const pm10RawPoints = movingAverages24h.pm10;
   ];
 
   // Dynamic Dotted Threshold Lines spanning FULL width of the X-axis bounds even when feeds are missing
-  const bounds = getXAxisBounds(viewMode, dayVal, refEnd);
+  const bounds = getXAxisBounds(viewMode, dayVal, refEnd, tStart);
   const fullRangePoints = [bounds.min, bounds.max];
 
   if (aqiMode === 'EEA') {
@@ -778,7 +923,7 @@ const pm10RawPoints = movingAverages24h.pm10;
         tooltip: getTooltipConfig()
       },
       scales: {
-        x: getXAxisConfig(viewMode, dayVal, refEnd),
+        x: getXAxisConfig(viewMode, dayVal, refEnd, tStart),
         y: {
           beginAtZero: false,
           min: 0, // PM10/PM2.5: asse Y mai negativo
