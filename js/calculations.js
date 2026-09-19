@@ -75,7 +75,7 @@ function computeEPAAQI(pm25_24, pm10_24) {
  * Aggregate feeds into hourly points (averaging consecutive feeds per hour)
  */
 function aggregateHourly(feeds, field) {
-  const valid = feeds.filter(f => !isNaN(Number(f[field])));
+  const valid = feeds.filter(f => f[field] !== null && f[field] !== undefined && f[field] !== '' && !isNaN(Number(f[field])));
   if (!valid.length) return [];
 
   const map = {};
@@ -100,11 +100,12 @@ function aggregateHourly(feeds, field) {
 function aggregateDaily(feeds, field) {
   const map = {};
   feeds.forEach(f => {
-    const d = new Date(f.created_at);
-    const key = d.toISOString().slice(0, 10);
-    if (!map[key]) map[key] = [];
-    const val = Number(f[field]);
-    if (!isNaN(val)) map[key].push(val);
+    if (f[field] !== null && f[field] !== undefined && f[field] !== '' && !isNaN(Number(f[field]))) {
+      const d = new Date(f.created_at);
+      const key = d.toISOString().slice(0, 10);
+      if (!map[key]) map[key] = [];
+      map[key].push(Number(f[field]));
+    }
   });
 
   return Object.entries(map)

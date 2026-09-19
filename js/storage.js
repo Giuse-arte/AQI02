@@ -48,15 +48,22 @@ function loadStationPreferences(stationIdx) {
 
   try {
     const parsed = JSON.parse(savedStr);
+    let chartsList = (parsed.remember && Array.isArray(parsed.charts))
+      ? parsed.charts
+      : [...DEFAULT_PREFERENCES.charts];
+
+    // Ensure newly introduced MiCS charts are enabled by default for existing saved sessions
+    if (!chartsList.some(id => typeof id === 'string' && id.startsWith('mics_'))) {
+      chartsList = [...chartsList, 'mics_co', 'mics_no2', 'mics_nh3'];
+    }
+
     return {
       mode: parsed.mode || DEFAULT_PREFERENCES.mode,
       startDate: parsed.startDate || '',
       viewMode: parsed.viewMode || DEFAULT_PREFERENCES.viewMode,
       day: parsed.day || '',
       remember: !!parsed.remember,
-      charts: (parsed.remember && Array.isArray(parsed.charts))
-        ? parsed.charts
-        : [...DEFAULT_PREFERENCES.charts]
+      charts: chartsList
     };
   } catch (err) {
     console.error(`[Storage] Failed to parse preferences for station ${stationIdx}:`, err);

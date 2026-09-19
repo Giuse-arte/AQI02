@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    AQI DASHBOARD 2.0 - MAIN CONTROLLER & APPLICATION ENTRY POINT
    ========================================================================== */
 
@@ -7,6 +7,7 @@ let activeStationIdx = 0;
 let currentStation = STATIONS[0];
 let state = { ...loadStationPreferences(0) };
 let rawFeedsStore = [];
+let rawMicsFeedsStore = [];
 let refreshTimer = null;
 let lastFieldTracker = { startDate: '', viewMode: 'live', day: '' };
 
@@ -129,11 +130,29 @@ function updateHeaderUI(geoInfo, tStart, tEnd) {
 }
 
 /**
- * Updates 8 synthetic KPI Cards using the latest real feeds from the IoT station
+ * Updates 11 synthetic KPI Cards using the latest real feeds from the IoT station and MiCS-6814 sensor
  */
-function updateKPICards(allAvailableFeeds) {
+function updateKPICards(allAvailableFeeds, allAvailableMicsFeeds) {
   if (!allAvailableFeeds || !allAvailableFeeds.length) {
-    applyDemoKPIs();
+    document.getElementById('lastUpdate').textContent = `Ultima rilevazione: Nessun dato disponibile`;
+    const gasSensor = getStationGasSensor(currentStation, allAvailableFeeds, allAvailableMicsFeeds);
+    ['micsCoSensor', 'micsNo2Sensor', 'micsNh3Sensor'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = gasSensor.card;
+    });
+    ['humValue', 'tempValue', 'pressValue', 'vocValue', 'pm1Value', 'pm25InstantValue', 'pm10InstantValue', 'pm25Value', 'pm10Value', 'aqiVal', 'micsCoValue', 'micsNo2Value', 'micsNh3Value'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    });
+    ['humMM', 'tempMM', 'pressMM', 'vocDelta', 'pm1MM', 'pm25InstantMM', 'pm10InstantMM', 'pm25avg', 'pm10avg', 'micsCoMM', 'micsNo2MM', 'micsNh3MM'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    });
+    const badgeEl = document.getElementById('aqiBadge');
+    if (badgeEl) {
+      badgeEl.textContent = 'Non disponibile';
+      badgeEl.style.backgroundColor = '#64748b';
+    }
     return;
   }
 
@@ -211,11 +230,23 @@ function updateKPICards(allAvailableFeeds) {
     document.getElementById('vocDelta').textContent = `—`;
   }
 
-  // Card 5: PM1
+  // Card 1: PM1
   document.getElementById('pm1Value').textContent = `${fmt0(lastFeed.field5)} µg/m³`;
   document.getElementById('pm1MM').textContent = getMinMaxStr('field5', 'µg/m³');
 
-  // Card 6: PM2.5 (24h Moving Average as main value + 24h Min-Max range as subtext)
+  // Card 2: PM2.5 (Istantaneo)
+  const pm25InstEl = document.getElementById('pm25InstantValue');
+  const pm25InstMmEl = document.getElementById('pm25InstantMM');
+  if (pm25InstEl) pm25InstEl.textContent = `${fmt0(lastFeed.field6)} µg/m³`;
+  if (pm25InstMmEl) pm25InstMmEl.textContent = getMinMaxStr('field6', 'µg/m³');
+
+  // Card 3: PM10 (Istantaneo)
+  const pm10InstEl = document.getElementById('pm10InstantValue');
+  const pm10InstMmEl = document.getElementById('pm10InstantMM');
+  if (pm10InstEl) pm10InstEl.textContent = `${fmt0(lastFeed.field7)} µg/m³`;
+  if (pm10InstMmEl) pm10InstMmEl.textContent = getMinMaxStr('field7', 'µg/m³');
+
+  // Card 4: PM2.5 (24h Moving Average as main value + 24h Min-Max range as subtext)
   if (hasFull24h) {
     const avg24PM25 = feedsForAvg.reduce((s, x) => s + Number(x.field6 || 0), 0) / feedsForAvg.length;
     document.getElementById('pm25Value').textContent = `${fmt0(avg24PM25)} µg/m³`;
@@ -252,6 +283,71 @@ function updateKPICards(allAvailableFeeds) {
     badgeEl.textContent = `In attesa 24h`;
     badgeEl.style.backgroundColor = `#64748b`;
   }
+
+  // Cards 9 (CO), 10 (NO2), 11 (NH3): Dynamic Gas Sensor Readings (MiCS-6814 vs Grove V2)
+  const gasSensor = getStationGasSensor(currentStation, allAvailableFeeds, allAvailableMicsFeeds);
+  const coSensEl = document.getElementById('micsCoSensor');
+  const no2SensEl = document.getElementById('micsNo2Sensor');
+  const nh3SensEl = document.getElementById('micsNh3Sensor');
+  if (coSensEl) coSensEl.textContent = gasSensor.card;
+  if (no2SensEl) no2SensEl.textContent = gasSensor.card;
+  if (nh3SensEl) nh3SensEl.textContent = gasSensor.card;
+
+  if (!currentStation?.hasMics || !currentStation?.micsFields) {
+    const coEl = document.getElementById('micsCoValue');
+    const coMmEl = document.getElementById('micsCoMM');
+    if (coEl) coEl.textContent = '—';
+    if (coMmEl) coMmEl.textContent = 'Non installato';
+
+    const no2El = document.getElementById('micsNo2Value');
+    const no2MmEl = document.getElementById('micsNo2MM');
+    if (no2El) no2El.textContent = '—';
+    if (no2MmEl) no2MmEl.textContent = 'Non installato';
+
+    const nh3El = document.getElementById('micsNh3Value');
+    const nh3MmEl = document.getElementById('micsNh3MM');
+    if (nh3El) nh3El.textContent = '—';
+    if (nh3MmEl) nh3MmEl.textContent = 'Non installato';
+  } else {
+    const micsFields = currentStation.micsFields;
+
+        const getMicsCardData = (fieldKey) => {
+      if (!allAvailableMicsFeeds || !allAvailableMicsFeeds.length || !fieldKey) {
+        return { valStr: '- µg/m³', minMaxStr: '-' };
+      }
+      const valid = allAvailableMicsFeeds.filter(f => f && f[fieldKey] !== null && f[fieldKey] !== undefined && f[fieldKey] !== '' && !isNaN(Number(f[fieldKey])));
+      if (!valid.length) {
+        return { valStr: '- µg/m³', minMaxStr: '-' };
+      }
+      const lastVal = Number(valid.at(-1)[fieldKey]);
+      const numVals = valid.map(f => Number(f[fieldKey]));
+      const min = Math.min(...numVals);
+      const max = Math.max(...numVals);
+      return {
+        valStr: `${fmt1(lastVal)} µg/m³`,
+        minMaxStr: `${fmt1(min)} µg/m³ — ${fmt1(max)} µg/m³`
+      };
+    };
+
+    const coData = getMicsCardData(micsFields.co);
+    const no2Data = getMicsCardData(micsFields.no2);
+    const nh3Data = getMicsCardData(micsFields.nh3);
+
+    const coEl = document.getElementById('micsCoValue');
+    const coMmEl = document.getElementById('micsCoMM');
+    if (coEl) coEl.textContent = coData.valStr;
+    if (coMmEl) coMmEl.textContent = coData.minMaxStr;
+
+    const no2El = document.getElementById('micsNo2Value');
+    const no2MmEl = document.getElementById('micsNo2MM');
+    if (no2El) no2El.textContent = no2Data.valStr;
+    if (no2MmEl) no2MmEl.textContent = no2Data.minMaxStr;
+
+    const nh3El = document.getElementById('micsNh3Value');
+    const nh3MmEl = document.getElementById('micsNh3MM');
+    if (nh3El) nh3El.textContent = nh3Data.valStr;
+    if (nh3MmEl) nh3MmEl.textContent = nh3Data.minMaxStr;
+  }
 }
 
 /**
@@ -259,7 +355,7 @@ function updateKPICards(allAvailableFeeds) {
  */
 function applyDemoKPIs() {
   const demo = getDemoData();
-  updateKPICards(demo.feeds);
+  updateKPICards(demo.feeds, []);
 }
 
 /**
@@ -271,28 +367,39 @@ async function refreshDashboard() {
   refreshTimer = setTimeout(async () => {
     const { start: tStart, end: tEnd } = getTimeRange();
 
-    // 1. Fetch range feeds for historical charts (with automatic fallback to latest historical feeds if range is empty)
-    let channelData = await fetchChannelFeeds(currentStation.id, currentStation.apiKey, tStart, tEnd);
+    // 1. Fetch range feeds concurrently from primary station and secondary MiCS channel
+    const [primaryData, micsData] = await Promise.all([
+      fetchChannelFeeds(currentStation.id, currentStation.apiKey, tStart, tEnd),
+      fetchChannelFeeds(MICS_CHANNEL.id, MICS_CHANNEL.apiKey, tStart, tEnd)
+    ]);
 
-    // If channelData is missing or empty, fetch latest historical feeds directly
+    let channelData = primaryData;
     if (!channelData || !channelData.feeds || !channelData.feeds.length) {
       channelData = await fetchLatestChannelFeeds(currentStation.id, currentStation.apiKey);
     }
 
+    let finalMicsData = micsData;
+    if (!finalMicsData || !finalMicsData.feeds || !finalMicsData.feeds.length) {
+      finalMicsData = await fetchLatestChannelFeeds(MICS_CHANNEL.id, MICS_CHANNEL.apiKey);
+    }
+
     const feeds = channelData ? (channelData.feeds || []) : [];
+    const micsFeeds = finalMicsData ? (finalMicsData.feeds || []) : [];
+
     rawFeedsStore = feeds;
+    rawMicsFeedsStore = micsFeeds;
 
     const channelInfo = channelData ? (channelData.channel || {}) : {};
     
     // Parse GeoLocation & RSSI strictly from the latest real feed recorded by the station
     const lastRealFeed = feeds.at(-1);
-    const geoInfo = parseGeoAndRssi(channelInfo, lastRealFeed);
+    const geoInfo = parseGeoAndRssi(channelInfo, lastRealFeed, currentStation);
 
     updateHeaderUI(geoInfo, tStart, tEnd);
-    updateKPICards(feeds);
+    updateKPICards(feeds, micsFeeds);
 
     const chartsContainer = document.getElementById('chartsContainer');
-    renderActiveCharts(chartsContainer, feeds, state.charts, state.viewMode, state.day, state.mode, tStart, tEnd);
+    renderActiveCharts(chartsContainer, feeds, micsFeeds, state.charts, state.viewMode, state.day, state.mode, tStart, tEnd, currentStation);
   }, 250);
 }
 
@@ -506,7 +613,7 @@ function initApp() {
 
   // CSV Export Button
   document.getElementById('exportCsvBtn').addEventListener('click', () => {
-    exportCSVData(currentStation.name, state.viewMode, state.day, rawFeedsStore);
+    exportCSVData(currentStation.name, state.viewMode, state.day, rawFeedsStore, rawMicsFeedsStore, currentStation);
   });
 
   // Control Panel Dropdown Toggle
