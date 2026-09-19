@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    AQI DASHBOARD 2.0 - LOCALSTORAGE PREFERENCES MANAGER
    ========================================================================== */
 
@@ -55,6 +55,11 @@ function loadStationPreferences(stationIdx) {
     // Ensure newly introduced MiCS charts are enabled by default for existing saved sessions
     if (!chartsList.some(id => typeof id === 'string' && id.startsWith('mics_'))) {
       chartsList = [...chartsList, 'mics_co', 'mics_no2', 'mics_nh3'];
+    }
+
+    // Ensure newly introduced RSSI chart is enabled by default for existing saved sessions
+    if (!chartsList.includes('rssi')) {
+      chartsList.push('rssi');
     }
 
     return {

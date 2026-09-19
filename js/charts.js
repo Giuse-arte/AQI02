@@ -484,7 +484,7 @@ function renderActiveCharts(containerEl, feeds, micsFeeds, selectedChartIds, vie
   const fullRangePoints = [bounds.min, bounds.max];
 
   // Fixed display order: 5 (PM1), 6 (PM2.5), 7 (PM10), combo, 1 (Hum), 2 (Temp), 3 (Pres), 4 (VOC), mics_co, mics_no2, mics_nh3
-  const renderOrder = ['5', '6', '7', 'combo', '1', '2', '3', '4', 'mics_co', 'mics_no2', 'mics_nh3'];
+  const renderOrder = ['5', '6', '7', 'combo', '1', '2', '3', '4', 'mics_co', 'mics_no2', 'mics_nh3', 'rssi'];
 
   renderOrder.forEach(chartId => {
     if (!selectedChartIds.includes(chartId)) return;
@@ -584,6 +584,80 @@ function renderActiveCharts(containerEl, feeds, micsFeeds, selectedChartIds, vie
             y: {
               beginAtZero: true,
               grace: '10%',
+              title: { display: true, text: meta.unit, color: yTickColor },
+              ticks: { color: yTickColor },
+              grid: { color: yGridColor, lineWidth: 0.8 }
+            }
+          }
+        }
+      });
+      return;
+    }
+
+    if (chartId === 'rssi') {
+      const meta = CHART_META.rssi;
+      if (!meta) return;
+
+      const validRssiFeeds = activeFeeds
+        .map(f => {
+          let r = NaN;
+          if (f.field8 !== undefined && f.field8 !== null && f.field8 !== '') {
+            r = Number(String(f.field8).split(';')[0]);
+          }
+          return { created_at: f.created_at, rssi: r };
+        })
+        .filter(f => !isNaN(f.rssi) && f.rssi < 0);
+
+      const rawPoints = aggFn
+        ? aggFn(validRssiFeeds, 'rssi')
+        : validRssiFeeds.map(f => ({ x: new Date(f.created_at), y: f.rssi }));
+      const points = addNullGapsToPoints(rawPoints);
+
+      const datasets = [{
+        label: meta.title,
+        data: points,
+        spanGaps: false,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 2,
+        borderColor: meta.color,
+        backgroundColor: meta.color
+      }];
+
+      const card = document.createElement('div');
+      card.className = 'chart-card';
+      card.id = `card_${chartId}`;
+      card.innerHTML = `
+        <div class="chart-card-header">
+          <div class="chart-title-group">
+            <span class="chart-card-title">${meta.title}</span>
+            <span class="chart-card-sensor">${meta.sensor}</span>
+          </div>
+        </div>
+        <div class="chart-canvas-container">
+          <canvas id="chart_canvas_${chartId}"></canvas>
+        </div>
+      `;
+      containerEl.appendChild(card);
+
+      const ctx = card.querySelector('canvas').getContext('2d');
+      chartInstances[chartId] = new Chart(ctx, {
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: getTooltipConfig()
+          },
+          scales: {
+            x: getXAxisConfig(viewMode, dayVal, refEnd, tStart),
+            y: {
+              beginAtZero: false,
+              suggestedMin: -90,
+              suggestedMax: -30,
+              grace: '5%',
               title: { display: true, text: meta.unit, color: yTickColor },
               ticks: { color: yTickColor },
               grid: { color: yGridColor, lineWidth: 0.8 }

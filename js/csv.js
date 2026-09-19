@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    AQI DASHBOARD 2.0 - CSV EXPORTER
    ========================================================================== */
 
@@ -87,7 +87,7 @@ function exportCSVData(stationName, viewMode, dayVal, rawFeedsStore, rawMicsFeed
   rows.push('');
 
   // Fixed Header Specification (Extended with MiCS-6814 Gas concentrations in µg/m³)
-  const header = ['Date/Time', 'year', 'month', 'temp', 'hum', 'pres', 'voc', 'PM1', 'PM2_5', 'PM2_5_mavg', 'PM10', 'PM10_mavg', 'MICS_CO', 'MICS_NO2', 'MICS_NH3'];
+  const header = ['Date/Time', 'year', 'month', 'temp', 'hum', 'pres', 'voc', 'PM1', 'PM2_5', 'PM2_5_mavg', 'PM10', 'PM10_mavg', 'MICS_CO', 'MICS_NO2', 'MICS_NH3', 'RSSI'];
   rows.push(header.join(sep));
 
   const formatNum = (v) => {

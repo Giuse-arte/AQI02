@@ -157,7 +157,8 @@ const CHART_META = {
   7: { title: 'PM10', sensor: 'PMS5003', unit: 'µg/m³', min: 0, max: 100, color: '#10b981' },
   mics_co: { title: 'Monossido di Carbonio (CO)', sensor: 'Gas Sensor', unit: 'µg/m³', color: '#f59e0b' },
   mics_no2: { title: 'Biossido di Azoto (NO₂)', sensor: 'Gas Sensor', unit: 'µg/m³', color: '#06b6d4' },
-  mics_nh3: { title: 'Ammoniaca (NH₃)', sensor: 'Gas Sensor', unit: 'µg/m³', color: '#8b5cf6' }
+  mics_nh3: { title: 'Ammoniaca (NH₃)', sensor: 'Gas Sensor', unit: 'µg/m³', color: '#8b5cf6' },
+  rssi: { title: 'Potenza Segnale WiFi (RSSI)', sensor: 'ESP32 Wi-Fi', unit: 'dBm', min: -100, max: -20, color: '#14b8a6' }
 };
 
 // Default Factory Visualization Preferences
@@ -167,5 +168,5 @@ const DEFAULT_PREFERENCES = {
   startDate: '',
   mode: 'EEA',
   remember: false,
-  charts: ['5', '6', '7', 'combo', '1', '2', '3', '4', 'mics_co', 'mics_no2', 'mics_nh3']
+  charts: ['5', '6', '7', 'combo', '1', '2', '3', '4', 'mics_co', 'mics_no2', 'mics_nh3', 'rssi']
 };
