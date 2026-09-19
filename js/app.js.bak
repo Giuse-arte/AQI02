@@ -237,18 +237,6 @@ const feedsForAvg = feeds24h.length ? feeds24h : allAvailableFeeds;
   document.getElementById('pm1Value').textContent = `${fmt0(lastFeed.field5)} µg/m³`;
   document.getElementById('pm1MM').textContent = getMinMaxStr('field5', 'µg/m³');
 
-  // Card 2: PM2.5 (Istantaneo)
-  const pm25InstEl = document.getElementById('pm25InstantValue');
-  const pm25InstMmEl = document.getElementById('pm25InstantMM');
-  if (pm25InstEl) pm25InstEl.textContent = `${fmt0(lastFeed.field6)} \u00b5g/m\u00b3`;
-  if (pm25InstMmEl) pm25InstMmEl.textContent = getMinMaxStr('field6', '\u00b5g/m\u00b3');
-
-  // Card 3: PM10 (Istantaneo)
-  const pm10InstEl = document.getElementById('pm10InstantValue');
-  const pm10InstMmEl = document.getElementById('pm10InstantMM');
-  if (pm10InstEl) pm10InstEl.textContent = `${fmt0(lastFeed.field7)} \u00b5g/m\u00b3`;
-  if (pm10InstMmEl) pm10InstMmEl.textContent = getMinMaxStr('field7', '\u00b5g/m\u00b3');
-
   // Card 6: PM2.5 (24h Moving Average as main value + 24h Min-Max range as subtext)
  if (hasFull24h) {
   const movingAverages24h = calculatePM24hMovingAverages(allAvailableFeeds);

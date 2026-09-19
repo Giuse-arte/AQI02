@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    AQI DASHBOARD 2.0 - CALCULATIONS & DATA AGGREGATION
    ========================================================================== */
 
@@ -30,7 +30,7 @@ function computeEEAAQI(pm25_24, pm10_24) {
   const info = EEA_THRESHOLDS.CLASSES[worstCls] || EEA_THRESHOLDS.CLASSES[1];
 
   return {
-    valueStr: worstCls.toString(),
+    valueStr: '—',
     label: info.label,
     color: info.color,
     bg: info.bg,
