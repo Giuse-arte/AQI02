@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    AQI DASHBOARD 2.0 - MAIN CONTROLLER & APPLICATION ENTRY POINT
    ========================================================================== */
 
@@ -189,8 +189,8 @@ const feeds24h = allAvailableFeeds.filter(f => {
 
 const feedsForAvg = feeds24h.length ? feeds24h : allAvailableFeeds;
 
-  // Helper for Min/Max range string
-  const getMinMaxStr = (fieldKey, unit, sourceFeeds = allAvailableFeeds) => {
+  // Helper for Min/Max range string (computed on the last 24 hours)
+  const getMinMaxStr = (fieldKey, unit, sourceFeeds = feedsForAvg) => {
     const validVals = sourceFeeds.map(x => Number(x[fieldKey])).filter(v => !isNaN(v));
     if (!validVals.length) return '—';
     const min = Math.min(...validVals);
@@ -250,66 +250,68 @@ const feedsForAvg = feeds24h.length ? feeds24h : allAvailableFeeds;
   if (pm10InstMmEl) pm10InstMmEl.textContent = getMinMaxStr('field7', '\u00b5g/m\u00b3');
 
   // Card 6: PM2.5 (24h Moving Average as main value + 24h Min-Max range as subtext)
- if (hasFull24h) {
-  const movingAverages24h = calculatePM24hMovingAverages(allAvailableFeeds);
-  const pm25Points = movingAverages24h.pm25;
+  if (hasFull24h) {
+    const movingAverages24h = calculatePM24hMovingAverages(allAvailableFeeds);
+    const pm25Points = movingAverages24h.pm25;
 
-  if (pm25Points.length) {
-    // Main value = latest 24h moving average point
-    const latestPM25 = pm25Points.at(-1).y;
-    document.getElementById('pm25Value').textContent = `${fmt0(latestPM25)} µg/m³`;
+    if (pm25Points.length) {
+      // Main value = latest 24h moving average point
+      const latestPM25 = pm25Points.at(-1).y;
+      document.getElementById('pm25Value').textContent = `${fmt0(latestPM25)} µg/m³`;
 
-    // Min/Max = last 24 calculated moving-average points
-    const pm25Window = pm25Points.slice(-24);
-    const pm25Values = pm25Window.map(p => p.y).filter(v => !isNaN(v));
+      // Min/Max = calculated moving-average points in the last 24h
+      const pm25Window = pm25Points.filter(p => p.x && p.x.getTime() >= cutoff24h.getTime() && p.x.getTime() <= lastDate.getTime());
+      const effectivePm25Window = pm25Window.length ? pm25Window : pm25Points.slice(-24);
+      const pm25Values = effectivePm25Window.map(p => p.y).filter(v => !isNaN(v));
 
-    if (pm25Values.length) {
-      const min = Math.min(...pm25Values);
-      const max = Math.max(...pm25Values);
-      document.getElementById('pm25avg').textContent =
-        `${fmt0(min)} µg/m³ — ${fmt0(max)} µg/m³`;
+      if (pm25Values.length) {
+        const min = Math.min(...pm25Values);
+        const max = Math.max(...pm25Values);
+        document.getElementById('pm25avg').textContent =
+          `${fmt0(min)} µg/m³ — ${fmt0(max)} µg/m³`;
+      } else {
+        document.getElementById('pm25avg').textContent = `—`;
+      }
     } else {
-      document.getElementById('pm25avg').textContent = `—`;
+      document.getElementById('pm25Value').textContent = `—`;
+      document.getElementById('pm25avg').textContent = `in attesa 24h...`;
     }
   } else {
     document.getElementById('pm25Value').textContent = `—`;
     document.getElementById('pm25avg').textContent = `in attesa 24h...`;
   }
-} else {
-  document.getElementById('pm25Value').textContent = `—`;
-  document.getElementById('pm25avg').textContent = `in attesa 24h...`;
-}
 
   // Card 7: PM10 (24h Moving Average as main value + 24h Min-Max range as subtext)
- if (hasFull24h) {
-  const movingAverages24h = calculatePM24hMovingAverages(allAvailableFeeds);
-  const pm10Points = movingAverages24h.pm10;
+  if (hasFull24h) {
+    const movingAverages24h = calculatePM24hMovingAverages(allAvailableFeeds);
+    const pm10Points = movingAverages24h.pm10;
 
-  if (pm10Points.length) {
-    // Main value = latest 24h moving average point
-    const latestPM10 = pm10Points.at(-1).y;
-    document.getElementById('pm10Value').textContent = `${fmt0(latestPM10)} µg/m³`;
+    if (pm10Points.length) {
+      // Main value = latest 24h moving average point
+      const latestPM10 = pm10Points.at(-1).y;
+      document.getElementById('pm10Value').textContent = `${fmt0(latestPM10)} µg/m³`;
 
-    // Min/Max = last 24 calculated moving-average points
-    const pm10Window = pm10Points.slice(-24);
-    const pm10Values = pm10Window.map(p => p.y).filter(v => !isNaN(v));
+      // Min/Max = calculated moving-average points in the last 24h
+      const pm10Window = pm10Points.filter(p => p.x && p.x.getTime() >= cutoff24h.getTime() && p.x.getTime() <= lastDate.getTime());
+      const effectivePm10Window = pm10Window.length ? pm10Window : pm10Points.slice(-24);
+      const pm10Values = effectivePm10Window.map(p => p.y).filter(v => !isNaN(v));
 
-    if (pm10Values.length) {
-      const min = Math.min(...pm10Values);
-      const max = Math.max(...pm10Values);
-      document.getElementById('pm10avg').textContent =
-        `${fmt0(min)} µg/m³ — ${fmt0(max)} µg/m³`;
+      if (pm10Values.length) {
+        const min = Math.min(...pm10Values);
+        const max = Math.max(...pm10Values);
+        document.getElementById('pm10avg').textContent =
+          `${fmt0(min)} µg/m³ — ${fmt0(max)} µg/m³`;
+      } else {
+        document.getElementById('pm10avg').textContent = `—`;
+      }
     } else {
-      document.getElementById('pm10avg').textContent = `—`;
+      document.getElementById('pm10Value').textContent = `—`;
+      document.getElementById('pm10avg').textContent = `in attesa 24h...`;
     }
   } else {
     document.getElementById('pm10Value').textContent = `—`;
     document.getElementById('pm10avg').textContent = `in attesa 24h...`;
   }
-} else {
-  document.getElementById('pm10Value').textContent = `—`;
-  document.getElementById('pm10avg').textContent = `in attesa 24h...`;
-}
 
   // Card 8: AQI Index (Requires full 24h history for EEA/EPA compliance)
   document.getElementById('aqiTitle').textContent = `AQI (${state.mode} 24h)`;
@@ -356,16 +358,27 @@ const feedsForAvg = feeds24h.length ? feeds24h : allAvailableFeeds;
   } else {
     const micsFields = currentStation.micsFields;
 
-        const getMicsCardData = (fieldKey) => {
+    // Filter MiCS feeds to the 24-hour window preceding the latest MiCS reading (or station lastDate)
+    const lastMicsFeed = allAvailableMicsFeeds?.length ? allAvailableMicsFeeds.at(-1) : null;
+    const lastMicsDate = lastMicsFeed ? new Date(lastMicsFeed.created_at) : lastDate;
+    const micsCutoff24h = new Date(lastMicsDate.getTime() - 24 * 60 * 60 * 1000);
+    const micsFeeds24h = (allAvailableMicsFeeds || []).filter(f => {
+      const d = new Date(f.created_at);
+      return d >= micsCutoff24h && d <= lastMicsDate;
+    });
+    const micsSourceFeeds = micsFeeds24h.length ? micsFeeds24h : (allAvailableMicsFeeds || []);
+
+    const getMicsCardData = (fieldKey) => {
       if (!allAvailableMicsFeeds || !allAvailableMicsFeeds.length || !fieldKey) {
-        return { valStr: '- µg/m³', minMaxStr: '-' };
+        return { valStr: '— µg/m³', minMaxStr: '—' };
       }
       const valid = allAvailableMicsFeeds.filter(f => f && f[fieldKey] !== null && f[fieldKey] !== undefined && f[fieldKey] !== '' && !isNaN(Number(f[fieldKey])));
       if (!valid.length) {
-        return { valStr: '- µg/m³', minMaxStr: '-' };
+        return { valStr: '— µg/m³', minMaxStr: '—' };
       }
       const lastVal = Number(valid.at(-1)[fieldKey]);
-      const numVals = valid.map(f => Number(f[fieldKey]));
+      const valid24h = micsSourceFeeds.filter(f => f && f[fieldKey] !== null && f[fieldKey] !== undefined && f[fieldKey] !== '' && !isNaN(Number(f[fieldKey])));
+      const numVals = valid24h.length ? valid24h.map(f => Number(f[fieldKey])) : valid.map(f => Number(f[fieldKey]));
       const min = Math.min(...numVals);
       const max = Math.max(...numVals);
       return {
