@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    AQI DASHBOARD 2.0 - CHART.JS RENDERING ENGINE
    ========================================================================== */
 
@@ -624,6 +624,25 @@ function renderActiveCharts(containerEl, feeds, micsFeeds, selectedChartIds, vie
         backgroundColor: meta.color
       }];
 
+      // Reference threshold lines for Wi-Fi RSSI signal quality levels across full canvas width
+      const rssiLimits = [
+        { label: 'Limite Eccellente (≥ -50 dBm)', val: -50, color: '#10b981' },
+        { label: 'Limite Buono (-67 dBm)', val: -67, color: '#06b6d4' },
+        { label: 'Limite Discreto (-75 dBm)', val: -75, color: '#f59e0b' },
+        { label: 'Limite Scarso (-85 dBm)', val: -85, color: '#ef4444' }
+      ];
+
+      rssiLimits.forEach(lim => {
+        datasets.push({
+          label: lim.label,
+          data: fullRangePoints.map(x => ({ x, y: lim.val })),
+          borderDash: [6, 4],
+          borderColor: lim.color,
+          borderWidth: 1.5,
+          pointRadius: 0
+        });
+      });
+
       const card = document.createElement('div');
       card.className = 'chart-card';
       card.id = `card_${chartId}`;
@@ -633,12 +652,22 @@ function renderActiveCharts(containerEl, feeds, micsFeeds, selectedChartIds, vie
             <span class="chart-card-title">${meta.title}</span>
             <span class="chart-card-sensor">${meta.sensor}</span>
           </div>
+          <div class="chart-legend">
+            <button class="kpi-info-btn" id="rssiInfoBtn" style="position: static;" title="Informazioni Livelli Segnale Wi-Fi (RSSI)">i</button>
+          </div>
         </div>
         <div class="chart-canvas-container">
           <canvas id="chart_canvas_${chartId}"></canvas>
         </div>
       `;
       containerEl.appendChild(card);
+
+      const rssiBtn = card.querySelector('#rssiInfoBtn');
+      if (rssiBtn) {
+        rssiBtn.onclick = () => {
+          openRSSIInfoModal();
+        };
+      }
 
       const ctx = card.querySelector('canvas').getContext('2d');
       chartInstances[chartId] = new Chart(ctx, {
@@ -655,8 +684,8 @@ function renderActiveCharts(containerEl, feeds, micsFeeds, selectedChartIds, vie
             x: getXAxisConfig(viewMode, dayVal, refEnd, tStart),
             y: {
               beginAtZero: false,
-              suggestedMin: -90,
-              suggestedMax: -30,
+              suggestedMin: -95,
+              suggestedMax: -35,
               grace: '5%',
               title: { display: true, text: meta.unit, color: yTickColor },
               ticks: { color: yTickColor },

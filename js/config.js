@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    AQI DASHBOARD 2.0 - CONFIGURATION & CONSTANTS
    ========================================================================== */
 
@@ -105,16 +105,17 @@ function getStationGasSensor(station, primaryFeeds, micsFeeds) {
   };
 }
 
-// EEA (European Environment Agency) Classifications & Thresholds
+// EEA (European Environment Agency) Classifications & Thresholds (6 classi ufficiali)
 const EEA_THRESHOLDS = {
-  PM25: [10, 20, 25, 50],
-  PM10: [20, 40, 50, 100],
+  PM25: [10, 20, 25, 50, 75],
+  PM10: [20, 40, 50, 100, 150],
   CLASSES: {
-    1: { label: 'Buona', color: '#16a34a', bg: 'rgba(22, 163, 74, 0.2)' },
-    2: { label: 'Discreta', color: '#65a30d', bg: 'rgba(101, 163, 13, 0.2)' },
+    1: { label: 'Buona', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.2)' },
+    2: { label: 'Accettabile', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.2)' },
     3: { label: 'Moderata', color: '#eab308', bg: 'rgba(234, 179, 8, 0.2)' },
-    4: { label: 'Scarsa', color: '#f97316', bg: 'rgba(249, 115, 22, 0.2)' },
-    5: { label: 'Molto scarsa', color: '#dc2626', bg: 'rgba(220, 38, 38, 0.2)' }
+    4: { label: 'Scadente', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)' },
+    5: { label: 'Molto scadente', color: '#991b1b', bg: 'rgba(153, 27, 27, 0.2)' },
+    6: { label: 'Estremamente scadente', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.2)' }
   }
 };
 

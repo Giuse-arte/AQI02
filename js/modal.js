@@ -56,7 +56,7 @@ function openAQIInfoModal(activeMode = 'EEA') {
     if (isEEA) {
       tabContent.innerHTML = `
         <p style="color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; font-size: 0.9rem;">
-          L'Indice Europeo della Qualità dell'Aria (European Air Quality Index) dell'EEA misura le concentrazioni orarie (o medie calcolate su 24 ore) di PM2,5 e PM10 basandosi su 6 fasce di qualità. Definisce l'Indice di Qualità dell'Aria basandosi sulla concentrazione peggiore tra PM2.5 e PM10 nelle ultime 24 ore.
+          L'Indice Europeo della Qualità dell'Aria (European Air Quality Index) dell'EEA classifica lo stato dell'aria basandosi sulle <strong>medie calcolate sulle 24 ore (media mobile 24h)</strong> di PM2,5 e PM10 suddivise in 6 fasce ufficiali di qualità. Il valore e la classe finale assegnata all'indice AQI corrispondono alla concentrazione peggiore tra PM2.5 e PM10 nelle ultime 24 ore.
         </p>
 
         <table class="threshold-table">
@@ -64,8 +64,8 @@ function openAQIInfoModal(activeMode = 'EEA') {
             <tr>
               <th>Categoria EEA</th>
               <th>Colore associato</th>
-              <th>Concentrazione PM2,5 (µg/m³)</th>
-              <th>Concentrazione PM10 (µg/m³)</th>
+              <th>PM2,5 (µg/m³ - media 24h)</th>
+              <th>PM10 (µg/m³ - media 24h)</th>
             </tr>
           </thead>
           <tbody>
@@ -111,15 +111,15 @@ function openAQIInfoModal(activeMode = 'EEA') {
     } else {
       tabContent.innerHTML = `
         <p style="color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; font-size: 0.9rem;">
-          L'<strong>US EPA (Environmental Protection Agency)</strong> calcola un indice numerico da 0 a 500 tramite interpolazione lineare sui breakpoint ufficiali di PM2.5 e PM10. Il valore peggiore determina l'AQI finale.
+          L'<strong>US EPA (Environmental Protection Agency)</strong> calcola un indice numerico da 0 a 500 tramite interpolazione lineare sui breakpoint ufficiali di concentrazione mediata sulle 24 ore di PM2.5 e PM10. Il valore peggiore determina l'AQI finale.
         </p>
 
         <table class="threshold-table">
           <thead>
             <tr>
               <th>AQI (Valore)</th>
-              <th>PM2.5 (24h)</th>
-              <th>PM10 (24h)</th>
+              <th>PM2.5 (µg/m³ - media 24h)</th>
+              <th>PM10 (µg/m³ - media 24h)</th>
               <th>Fascia di Salute</th>
             </tr>
           </thead>
@@ -328,6 +328,106 @@ function openPMAnnualLimitsInfoModal() {
           </tr>
         </tbody>
       </table>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(modal);
+
+  document.getElementById('modalCloseBtn').onclick = closeModal;
+}
+
+/**
+ * Opens Wi-Fi RSSI Signal Levels Info Modal
+ */
+function openRSSIInfoModal() {
+  closeModal();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = closeModal;
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-container modal-rssi';
+  modal.style.maxWidth = '780px';
+
+  modal.innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">Livelli di Potenza del Segnale Wi-Fi (RSSI)</div>
+      <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.5; font-size: 0.9rem;">
+        L'<strong>RSSI</strong> (<em>Received Signal Strength Indicator</em>) misura la potenza del segnale radio Wi-Fi ricevuto dalla centralina (modulo ESP32) dal punto di accesso (Access Point o Router).
+      </p>
+      <p style="color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5; font-size: 0.9rem;">
+        Il valore è espresso in <strong>dBm</strong> (decibel-milliwatt) su scala logaritmica negativa: 
+        <strong>più il valore è vicino allo zero (meno negativo), più il segnale è potente e stabile</strong>. 
+        Al contrario, valori inferiori a -80 dBm indicano un segnale degradato con elevato rischio di disconnessione e ritardo nella sincronizzazione.
+      </p>
+
+      <table class="threshold-table" style="margin-bottom: 1.25rem;">
+        <thead>
+          <tr>
+            <th>Livello</th>
+            <th>Intervallo RSSI</th>
+            <th>Qualità Segnale</th>
+            <th>Stato Operativo Centralina (ESP32)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <span class="legend-color-pill" style="background:#10b981; width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:middle;"></span>
+              <strong style="color: #10b981;">Eccellente</strong>
+            </td>
+            <td><strong>&ge; -50 dBm</strong><br><small style="color:var(--text-muted);">(da -30 a -50 dBm)</small></td>
+            <td>Massima intensità, minima latenza e assenza di interferenze.</td>
+            <td>Invio dati istantaneo e fluido su ThingSpeak, massima affidabilità operativa.</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="legend-color-pill" style="background:#06b6d4; width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:middle;"></span>
+              <strong style="color: #06b6d4;">Buono</strong>
+            </td>
+            <td><strong>-51 a -67 dBm</strong></td>
+            <td>Segnale forte e costante; standard raccomandato per connessioni continuative.</td>
+            <td>Nessuna perdita di pacchetti, sincronizzazione regolare senza ritardi.</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="legend-color-pill" style="background:#f59e0b; width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:middle;"></span>
+              <strong style="color: #f59e0b;">Discreto</strong>
+            </td>
+            <td><strong>-68 a -75 dBm</strong></td>
+            <td>Segnale sufficiente; attenuazione causata da muri, ostacoli o distanza media.</td>
+            <td>Funzionamento idoneo per telemetria IoT, ma vulnerabile a peggioramenti o interferenze.</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="legend-color-pill" style="background:#ef4444; width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:middle;"></span>
+              <strong style="color: #ef4444;">Scarso</strong>
+            </td>
+            <td><strong>-76 a -85 dBm</strong></td>
+            <td>Segnale debole; frequenti ritrasmissioni e instabilità della portante radio.</td>
+            <td>Possibili ritardi nelle letture, pacchetti persi e occasionali buchi temporali nei grafici.</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="legend-color-pill" style="background:#991b1b; width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; vertical-align:middle;"></span>
+              <strong style="color: #dc2626;">Pessimo / Critico</strong>
+            </td>
+            <td><strong>&lt; -85 dBm</strong><br><small style="color:var(--text-muted);">(fino a -100 dBm)</small></td>
+            <td>Segnale al limite della sensibilità del ricevitore Wi-Fi ESP32.</td>
+            <td>Frequenti disconnessioni, prolungati tentativi di riconnessione e perdita di dati.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #0284c7; padding: 0.75rem 1rem; border-radius: 4px; font-size: 0.82rem; line-height: 1.45; color: var(--text-muted);">
+        <strong style="color: var(--text-main);">Raccomandazione di installazione:</strong>
+        Per garantire un flusso di rilevamento continuo senza interruzioni, è consigliabile posizionare la centralina in una zona in cui il segnale rimanga stabilmente sopra i <strong>-75 dBm</strong> (idealmente superiore a <strong>-67 dBm</strong>).
+      </div>
     </div>
   `;
 
