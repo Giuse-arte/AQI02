@@ -106,7 +106,7 @@ L'indice numerico EPA AQI (scala da 0 a 500) viene calcolato mediante interpolaz
 1. PM1 (PMS5003)
 2. PM2.5 (PMS5003)
 3. PM10 (PMS5003)
-4. PM2.5 + PM10 (24h) [COMBO] (medie mobili 24h)
+4. PM2.5 + PM10 (24h) [COMBO] (medie mobili 24h con linee tratteggiate dinamiche: limiti giornalieri a 50/25 µg/m³ nelle viste brevi/medie; limiti annuali a 40/20 µg/m³ nella vista Anno)
 5. Umidità (BME680)
 6. Temperatura (BME680)
 7. Pressione (BME680)

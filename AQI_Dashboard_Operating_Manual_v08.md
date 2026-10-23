@@ -157,7 +157,10 @@ Ciascun grafico può essere attivato o disattivato tramite il pannello *Contr. C
 1. **PM1 (PMS5003)**: andamento del particolato ultrafine in µg/m³.
 2. **PM2.5 (PMS5003)**: concentrazione istantanea di particolato fine in µg/m³.
 3. **PM10 (PMS5003)**: concentrazione istantanea di particolato grossolano in µg/m³.
-4. **PM2.5 + PM10 (24h) [COMBO]**: grafico combinato delle **medie mobili a 24 ore** con soglie normative tratteggiate (EEA/EPA). Resta intenzionalmente vuoto nelle prime 24 ore da *Data Inizio* per garantire rigore statistico.
+4. **PM2.5 + PM10 (24h) [COMBO]**: grafico combinato delle **medie mobili a 24 ore** con soglie normative tratteggiate (EEA/EPA). Resta intenzionalmente vuoto nelle prime 24 ore da *Data Inizio* per garantire rigore statistico.  
+   *Nota sulle linee di soglia tratteggiate (adattamento dinamico)*: per mantenere il tracciato pulito e privo di sovrapposizioni confuse, la dashboard visualizza una sola linea di riferimento per inquinante, calibrata sul periodo temporale osservato:
+   - **Modalità Live 24h, Giorno, 7gg e Mese**: visualizza i **limiti giornalieri 24h** (Standard EEA: Linea Arancione a 50 µg/m³ per PM10 e Linea Gialla a 25 µg/m³ per PM2.5; Standard EPA: Linea Rosso Scuro a 150 µg/m³ e Linea Rossa a 35 µg/m³).
+   - **Modalità Anno**: le linee tratteggiate si riposizionano automaticamente sui **limiti annuali di legge** (Standard EEA: Linea Arancione a 40 µg/m³ per PM10 e Linea Gialla a 20 µg/m³ per PM2.5; Standard EPA: Linea Rosso Scuro a 50 µg/m³ e Linea Rossa a 15 µg/m³).
 5. **Umidità (BME680)**: andamento dell'umidità relativa (%).
 6. **Temperatura (BME680)**: andamento termico in °C.
 7. **Pressione (BME680)**: oscillazioni barometriche locali in hPa.

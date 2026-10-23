@@ -184,7 +184,7 @@ function openCOMBOInfoModal() {
 
   const modal = document.createElement('div');
   modal.className = 'modal-container';
-  modal.style.maxWidth = '650px';
+  modal.style.maxWidth = '680px';
 
   modal.innerHTML = `
     <div class="modal-header">
@@ -192,20 +192,58 @@ function openCOMBOInfoModal() {
       <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
     </div>
     <div class="modal-body">
-      <p style="color: var(--text-muted); margin-bottom: 1rem;">
-        La normativa Italiana/Europea (EEA) e quella Statunitense (EPA) stabiliscono sia <strong>limiti giornalieri (24h)</strong> per prevenire picchi acuti, sia <strong>limiti annuali (365 giorni)</strong> per tutelare la salute nel lungo termine.
+      <p style="color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5; font-size: 0.9rem;">
+        Il grafico COMBO visualizza l'andamento delle medie mobili a 24 ore di PM2.5 e PM10 confrontate con le soglie normative ufficiali.
+        Le linee tratteggiate di limite sono <strong>dinamiche</strong> e si impostano automaticamente sulla soglia pertinente al periodo temporale selezionato:
       </p>
 
-      <div style="background: rgba(30,41,59,0.5); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 1rem;">
-        <h4 style="color: var(--primary); margin-bottom: 0.4rem;">Standard EEA (Europa)</h4>
-        <p><span style="color:#f97316; font-weight:700;">Linea Arancione:</span> 50 µg/m³ (Limite giornaliero PM10) | 40 µg/m³ (Limite annuale PM10)</p>
-        <p><span style="color:#eab308; font-weight:700;">Linea Gialla:</span> 25 µg/m³ (Limite giornaliero PM2.5) | 20 µg/m³ (Limite annuale PM2.5)</p>
+      <!-- 1. MODALITA GIORNALIERE E BREVE/MEDIO TERMINE -->
+      <div style="background: rgba(30,41,59,0.5); padding: 0.9rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 0.85rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+          <h4 style="color: var(--primary); margin: 0; font-size: 0.92rem;">1. Modalità Breve/Medio Termine (Live 24h, Giorno, 7gg, Mese)</h4>
+          <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">Limiti Giornalieri (24h)</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.84rem; margin-bottom: 0.5rem; line-height: 1.4;">
+          Nel grafico compare <strong>una sola linea di soglia per ciascun inquinante</strong>, posizionata sul limite massimo giornaliero calcolato sulle 24 ore:
+        </p>
+        <div style="font-size: 0.86rem; line-height: 1.6;">
+          <p style="margin: 0.2rem 0;">
+            <strong style="color:#f97316;">— — Linea Arancione a 50 µg/m³:</strong> Limite giornaliero EEA per <strong>PM10</strong> (soglia di legge D.Lgs. 155/2010).
+          </p>
+          <p style="margin: 0.2rem 0;">
+            <strong style="color:#eab308;">— — Linea Gialla a 25 µg/m³:</strong> Limite giornaliero EEA per <strong>PM2.5</strong> (obiettivo nuova Direttiva UE / soglia qualità EEA).
+          </p>
+          <p style="margin: 0.4rem 0 0 0; color: var(--text-muted); font-size: 0.8rem;">
+            <em>Se impostato su Standard EPA (USA):</em> Linea Rosso Scuro a <strong>150 µg/m³</strong> (PM10) e Linea Rossa a <strong>35 µg/m³</strong> (PM2.5).
+          </p>
+        </div>
       </div>
 
-      <div style="background: rgba(30,41,59,0.5); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08);">
-        <h4 style="color: var(--accent-purple); margin-bottom: 0.4rem;">Standard EPA (USA)</h4>
-        <p><span style="color:#7f1d1d; font-weight:700;">Linea Rosso Scuro:</span> 150 µg/m³ (Limite giornaliero PM10) | 50 µg/m³ (Limite annuale PM10)</p>
-        <p><span style="color:#ef4444; font-weight:700;">Linea Rossa:</span> 35 µg/m³ (Limite giornaliero PM2.5) | 15 µg/m³ (Limite annuale PM2.5)</p>
+      <!-- 2. MODALITA ANNO -->
+      <div style="background: rgba(30,41,59,0.5); padding: 0.9rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 0.85rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+          <h4 style="color: var(--accent-purple); margin: 0; font-size: 0.92rem;">2. Modalità Lungo Termine (Anno)</h4>
+          <span style="background: rgba(168, 85, 247, 0.15); color: #c084fc; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">Limiti Annuali</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.84rem; margin-bottom: 0.5rem; line-height: 1.4;">
+          Selezionando la modalità <strong>Anno</strong>, le linee tratteggiate si riposizionano automaticamente sulle soglie medie annuali da non superare nel lungo periodo:
+        </p>
+        <div style="font-size: 0.86rem; line-height: 1.6;">
+          <p style="margin: 0.2rem 0;">
+            <strong style="color:#f97316;">— — Linea Arancione a 40 µg/m³:</strong> Limite medio annuale di legge per <strong>PM10</strong>.
+          </p>
+          <p style="margin: 0.2rem 0;">
+            <strong style="color:#eab308;">— — Linea Gialla a 20 µg/m³:</strong> Limite medio annuale di legge per <strong>PM2.5</strong>.
+          </p>
+          <p style="margin: 0.4rem 0 0 0; color: var(--text-muted); font-size: 0.8rem;">
+            <em>Se impostato su Standard EPA (USA):</em> Linea Rosso Scuro a <strong>50 µg/m³</strong> (PM10) e Linea Rossa a <strong>15 µg/m³</strong> (PM2.5).
+          </p>
+        </div>
+      </div>
+
+      <div style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #0284c7; padding: 0.65rem 0.9rem; border-radius: 4px; font-size: 0.82rem; line-height: 1.45; color: var(--text-muted);">
+        <strong style="color: var(--text-main);">Perché sul grafico vedi una sola linea per inquinante?</strong><br>
+        Per garantire la massima leggibilità e non affollare il tracciato con 4 linee tratteggiate contemporanee, la dashboard visualizza esclusivamente la soglia coerente con la finestra temporale osservata (giornaliera nelle viste brevi, annuale nella vista a 365 giorni).
       </div>
     </div>
   `;
