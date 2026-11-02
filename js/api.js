@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    AQI DASHBOARD 2.0 - THINGSPEAK API & DEMO DATA FETCHER
    ========================================================================== */
 
@@ -112,26 +112,32 @@ function parseGeoAndRssi(channelObj, lastFeed, stationObj) {
   let latNum = null;
   let lonNum = null;
 
-  if (manualGeo.lat !== null) {
-    latNum = manualGeo.lat;
-    lonNum = manualGeo.lon;
-    geoStr = `${manualGeo.lat.toFixed(6)},${manualGeo.lon.toFixed(6)}`;
-    geoLabel = 'Configurata';
-    ledClass = 'configurata';
-  } else if (f8 !== undefined && f8 !== null && f8 !== '') {
+  // 1. Priorità: Coordinate acquisite in tempo reale dalla centralina (nel campo field8 dopo ';')
+  let autoGeoFound = false;
+  if (f8 !== undefined && f8 !== null && f8 !== '') {
     const semiParts = String(f8).split(';');
     if (semiParts[1]) {
       const geoParts = semiParts[1].split(',');
       const lat = Number(geoParts[0]);
       const lon = Number(geoParts[1]);
-      if (!isNaN(lat) && !isNaN(lon)) {
+      if (!isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
         latNum = lat;
         lonNum = lon;
         geoStr = `${lat.toFixed(6)},${lon.toFixed(6)}`;
         geoLabel = 'Automatica';
         ledClass = 'automatica';
+        autoGeoFound = true;
       }
     }
+  }
+
+  // 2. Fallback: Se la centralina non trasmette coordinate, usa quelle configurate nel canale ThingSpeak o nella stazione
+  if (!autoGeoFound && manualGeo.lat !== null) {
+    latNum = manualGeo.lat;
+    lonNum = manualGeo.lon;
+    geoStr = `${manualGeo.lat.toFixed(6)},${manualGeo.lon.toFixed(6)}`;
+    geoLabel = 'Configurata';
+    ledClass = 'configurata';
   }
 
   return {
