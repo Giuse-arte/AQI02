@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    AQI DASHBOARD 2.0 - MAIN CONTROLLER & APPLICATION ENTRY POINT
    ========================================================================== */
 
@@ -20,10 +20,9 @@ function getTimeRange() {
   let end = now;
 
   if (state.viewMode === 'live') {
-    // Recuperiamo 48h di dati per poter calcolare
-    // le ultime 24 medie mobili consecutive di 24h.
-    // NON significa attendere 48h dall'avvio della centralina.
-    start = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    // Finestra di 24 ore per la modalita Live (il buffer storico aggiuntivo
+    // per le medie mobili rolling e gestito internamente nelle chiamate API)
+    start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   } else if (state.viewMode === 'day' && state.day) {
     const selected = new Date(state.day);
     start = new Date(selected); start.setHours(0, 0, 0, 0);
